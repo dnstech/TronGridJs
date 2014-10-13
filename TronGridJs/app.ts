@@ -1,7 +1,9 @@
-﻿interface ITronGridOptions {
+﻿/// <reference path="types/knockout.d.ts" />
+/// <reference path="types/jquery.d.ts" />
+interface ITronGridOptions {
     primaryOrientation: string;
     rowSize: (item) => number;
-
+    template: string;
 }
 
 class TronGrid {
@@ -27,7 +29,12 @@ class TronGrid {
 
 }
 
+class MainViewModel {
+
+}
+
 window.onload = () => {
+    var template = document.getElementById('template');
     var el = document.getElementById('content');
     var greeter = new TronGrid(el);
     greeter.start();

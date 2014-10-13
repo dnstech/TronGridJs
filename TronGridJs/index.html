@@ -5,11 +5,16 @@
     <meta charset="utf-8" />
     <title>TypeScript HTML App</title>
     <link rel="stylesheet" href="app.css" type="text/css" />
+    <script src="jquery/jquery.js"></script>
+    <script src="knockout/knockout.debug.js"></script>
     <script src="app.js"></script>
 </head>
 <body>
     <h1>TypeScript HTML App</h1>
-
-    <div id="content"></div>
+    <div id="template" style="display:none;">
+        <span data-bind="text:value" />
+    </div>
+    <div id="content" data-bind="tronGrid: { items: data, template: selectTemplate }">
+    </div>
 </body>
 </html>
