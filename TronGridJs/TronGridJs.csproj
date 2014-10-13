@@ -28,9 +28,12 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="types\jquery.d.ts" />
+    <TypeScriptCompile Include="types\knockout.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="jquery\jquery.min.map" />
+    <Content Include="styles\main.less" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>

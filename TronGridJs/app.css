@@ -2,6 +2,7 @@
     font-family: 'Segoe UI', sans-serif;
 }
 
-span {
-    font-style: italic;
+.grid-cell {
+    border: 1px solid gray;
 }
+

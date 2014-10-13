@@ -2,8 +2,11 @@
 /// <reference path="types/jquery.d.ts" />
 interface ITronGridOptions {
     primaryOrientation: string;
-    rowSize: (item) => number;
-    template: string;
+    rowSize: (item) => {
+        width: number;
+        height: number;
+    };
+    template: (item) => string;
 }
 
 class TronGrid {
@@ -26,7 +29,6 @@ class TronGrid {
     stop() {
         clearTimeout(this.timerToken);
     }
-
 }
 
 class MainViewModel {
