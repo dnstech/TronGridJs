@@ -1,38 +1,21 @@
-﻿/// <reference path="types/knockout.d.ts" />
-/// <reference path="types/jquery.d.ts" />
-interface ITronGridOptions {
-    primaryOrientation: string;
-    rowSize: (item) => {
-        width: number;
-        height: number;
-    };
-    template: (item) => string;
-}
-
-class TronGrid {
-    element: HTMLElement;
-    span: HTMLElement;
-    timerToken: number;
-
-    constructor(element: HTMLElement, options?: ITronGridOptions) {
-        this.element = element;
-        this.element.innerHTML += "The time is: ";
-        this.span = document.createElement('div');
-        this.element.appendChild(this.span);
-        this.span.innerText = new Date().toUTCString();
-    }
-
-    start() {
-        this.timerToken = setInterval(() => this.span.innerHTML = new Date().toUTCString(), 500);
-    }
-
-    stop() {
-        clearTimeout(this.timerToken);
-    }
-}
+﻿/// <reference path="trongrid.ts" />
 
 class MainViewModel {
+    dataOnRows = ko.observableArray<RowViewModel>();
+    dataOnColumns = ko.observableArray<ColumnViewModel>();
+}
 
+class ColumnViewModel {
+    title = ko.observable('');
+    cells = ko.observableArray<CellViewModel>();
+}
+
+class RowViewModel {
+    cells = ko.observableArray<CellViewModel>();
+}
+
+class CellViewModel {
+    text = ko.observable('');
 }
 
 window.onload = () => {
