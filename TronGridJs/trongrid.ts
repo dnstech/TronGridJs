@@ -52,27 +52,17 @@ module TronGrid {
             private grid: TronGrid.TronGrid) {
         }
 
-        show(isTopLeftBlock: boolean) {
-            if (this.isVisible) {
-                return;
-            }
-
+        show() {
             if (!this.isRendered) {
                 this.render();
             }
 
-            if (isTopLeftBlock) {
-                this.block.style.paddingLeft = this.bounds.left + 'px';
-                this.block.style.paddingTop = this.bounds.top + 'px';
-            } else {
-                this.block.style.paddingLeft = '0';
-                this.block.style.paddingTop = '0';
+            if (this.isVisible) {
+                return;
             }
 
-            if (!this.isVisible) {
-                this.isVisible = true;
-                this.parent.appendChild(this.block);
-            }
+            this.isVisible = true;
+            this.parent.appendChild(this.block);
         }
 
         hide() {
@@ -81,7 +71,7 @@ module TronGrid {
             }
 
             this.isVisible = false;
-            this.parent.removeChild(this.block);
+            this.block.style.display = 'none';
         }
 
         /** Binds to just the relevant portion of the full two-dimensional cells array */
@@ -308,13 +298,17 @@ module TronGrid {
                         // AC: This performs a Divide, Floor, Multiply to give the Block Column Index and Block Row Index;
                         var bc = (c / this.options.columnsPerBlock | 0) * this.options.columnsPerBlock;
                         var br = (r / this.options.rowsPerBlock | 0) * this.options.rowsPerBlock;
-                        b.bounds = new Rectangle(this.blockLefts[bc], this.blockTops[br], this.blockWidths[bc], this.blockHeights[br]); 
+                        b.bounds = new Rectangle(
+                            this.blockLefts[bc],
+                            this.blockTops[br],
+                            this.blockWidths[bc],
+                            this.blockHeights[br]); 
                         this.blocks[blockIndex] = b;
                     } 
 
                     if (b.bounds.intersects(this.scrollBounds)) {
                         renderedRow = true;
-                        b.show(isTopLeftCell);
+                        b.show();
                         if (isTopLeftCell) {
                             isTopLeftCell = false;
                         }

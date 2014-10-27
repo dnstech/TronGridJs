@@ -10,8 +10,8 @@ var MainViewModel = (function () {
 
 var SampleDataProvider = (function () {
     function SampleDataProvider() {
-        this.rowCount = 10000;
-        this.columnCount = 10000;
+        this.rowCount = 1000;
+        this.columnCount = 1000;
     }
     SampleDataProvider.prototype.cellData = function (r, c) {
         return 'cell(' + r + ',' + c + ') ' + new Date();

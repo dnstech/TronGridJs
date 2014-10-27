@@ -15,27 +15,17 @@ var TronGrid;
             this.isRendered = false;
             this.isVisible = false;
         }
-        CellBlock.prototype.show = function (isTopLeftBlock) {
-            if (this.isVisible) {
-                return;
-            }
-
+        CellBlock.prototype.show = function () {
             if (!this.isRendered) {
                 this.render();
             }
 
-            if (isTopLeftBlock) {
-                this.block.style.paddingLeft = this.bounds.left + 'px';
-                this.block.style.paddingTop = this.bounds.top + 'px';
-            } else {
-                this.block.style.paddingLeft = '0';
-                this.block.style.paddingTop = '0';
+            if (this.isVisible) {
+                return;
             }
 
-            if (!this.isVisible) {
-                this.isVisible = true;
-                this.parent.appendChild(this.block);
-            }
+            this.isVisible = true;
+            this.parent.appendChild(this.block);
         };
 
         CellBlock.prototype.hide = function () {
@@ -44,7 +34,7 @@ var TronGrid;
             }
 
             this.isVisible = false;
-            this.parent.removeChild(this.block);
+            this.block.style.display = 'none';
         };
 
         /** Binds to just the relevant portion of the full two-dimensional cells array */
@@ -262,7 +252,7 @@ var TronGrid;
 
                     if (b.bounds.intersects(this.scrollBounds)) {
                         renderedRow = true;
-                        b.show(isTopLeftCell);
+                        b.show();
                         if (isTopLeftCell) {
                             isTopLeftCell = false;
                         }

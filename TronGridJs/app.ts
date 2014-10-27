@@ -7,8 +7,8 @@ class MainViewModel {
 }
 
 class SampleDataProvider implements TronGrid.IDataProvider {
-    rowCount = 10000;
-    columnCount = 10000;
+    rowCount = 1000;
+    columnCount = 1000;
     cellData(r, c) {
         return 'cell(' + r + ',' + c + ') ' + new Date();
     }
