@@ -2,7 +2,18 @@
     font-family: 'Segoe UI', sans-serif;
 }
 
-.grid-cell {
-    border: 1px solid gray;
+.tron-grid {
+    overflow:auto; background:black;width:500px; height:500px;
 }
 
+.tron-grid .cell {
+    outline: 1px solid blue;
+    overflow:hidden;
+    color:white;
+    float: left;
+}
+
+.tron-grid .block {
+    outline: 2px solid red;
+    overflow:hidden;
+}
