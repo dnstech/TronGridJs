@@ -1,26 +1,28 @@
 ﻿/// <reference path="trongrid.ts" />
 
 class MainViewModel {
-    dataOnRows = ko.observableArray<RowViewModel>();
-    dataOnColumns = ko.observableArray<ColumnViewModel>();
+    dataProvider = new SampleDataProvider();
 }
 
-class ColumnViewModel {
-    title = ko.observable('');
-    cells = ko.observableArray<CellViewModel>();
-}
+class SampleDataProvider implements TronGrid.IDataProvider {
+    rowCount = 10000;
+    columnCount = 10000;
+    cellData(r, c) {
+        return 'cell(' + r + ',' + c + ') ' + new Date();
+    }
 
-class RowViewModel {
-    cells = ko.observableArray<CellViewModel>();
-}
+    rowHeight(r) {
+        return 50;
+    }
 
-class CellViewModel {
-    text = ko.observable('');
+    columnWidth(c) {
+        return 50;
+    }
+
+    dataChanged: () => void;
 }
 
 window.onload = () => {
-    var template = document.getElementById('template');
     var el = document.getElementById('content');
-    var greeter = new TronGrid(el);
-    greeter.start();
+    ko.applyBindings(el, new MainViewModel());
 };

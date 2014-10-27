@@ -19,11 +19,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="app.css" />
+    <Content Include="app.js">
+      <DependentUpon>app.ts</DependentUpon>
+    </Content>
     <Content Include="index.html" />
     <Content Include="jquery\jquery.js" />
     <Content Include="jquery\jquery.min.js" />
     <Content Include="knockout\knockout.debug.js" />
     <Content Include="knockout\knockout.js" />
+    <Content Include="trongrid.js">
+      <DependentUpon>trongrid.ts</DependentUpon>
+    </Content>
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -35,6 +41,12 @@
   <ItemGroup>
     <Content Include="jquery\jquery.min.map" />
     <Content Include="styles\main.less" />
+    <Content Include="trongrid.js.map">
+      <DependentUpon>trongrid.ts</DependentUpon>
+    </Content>
+    <Content Include="app.js.map">
+      <DependentUpon>app.ts</DependentUpon>
+    </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
