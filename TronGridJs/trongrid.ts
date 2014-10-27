@@ -34,11 +34,11 @@ module TronGrid {
         /** Number of columns per CellBlock */
         columnsPerBlock?: number;
         dataProvider: IDataProvider;
-        dataPresenter: IDataPresenter;
+        dataPresenter?: IDataPresenter;
     }
 
     class CellBlock {
-        boundingBox: Rectangle;
+        bounds: Rectangle;
         isRendered: boolean = false;
         isVisible: boolean = false;
         block: HTMLDivElement;
@@ -65,6 +65,7 @@ module TronGrid {
 
         hide() {
             this.isVisible = false;
+            this.parent.removeChild(this.block);
         }
 
         /** Binds to just the relevant portion of the full two-dimensional cells array */
@@ -137,9 +138,8 @@ module TronGrid {
     }
 
     /** The main grid logic, which is attached to the Scroller via the binding handler */
-    class TronGrid {
-        defaultOptions: IOptions = {
-            dataProvider: null,
+    export class TronGrid {
+        defaultOptions: IOptions = <any>{
             dataPresenter: new TextPresenter(),
             rowsPerBlock: 10,
             columnsPerBlock: 10
@@ -147,27 +147,35 @@ module TronGrid {
 
         options: IOptions = this.defaultOptions;
         dataSubscription: KnockoutSubscription;
-        blocks: CellBlock[];
-        scrollBounds: Rectangle;
-        columnWidths: number[];
-        rowHeights: number[];
+
+        blockLefts: number[] = [];
+        blockTops: number[] = [];
+        blockWidths: number[] = [];
+        blockHeights: number[] = [];
+
+        columnWidths: number[] = [];
+        rowHeights: number[] = [];
         totalHeight: number = 0;
         totalWidth: number = 0;
         provider: IDataProvider;
         presenter: IDataPresenter;
         content: HTMLDivElement;
+        private blocks: CellBlock[] = [];
+        private scrollBounds: Rectangle;
 
         constructor(public scroller: HTMLElement) {
             this.registerEventHandlers();
         }
 
-        update(options: IOptions) {
-            this.options = $.extend(options || {}, this.defaultOptions);
+        update(o: IOptions) {
+            this.options = o;
+            $.extend(this.options, this.defaultOptions);
             this.provider = this.options.dataProvider;
             this.presenter = this.options.dataPresenter;
 
             this.content = document.createElement('div');
             this.scroller.appendChild(this.content);
+            this.scrollChanged();
             this.dataChanged();
         }
 
@@ -179,21 +187,59 @@ module TronGrid {
                 this.scroller.scrollHeight);
         }
 
+        measureColumns() {
+            var blockColumn = -1;
+            var blockLeft = 0;
+            var blockWidth = 0;
+            this.totalWidth = 0;
+            for (var c = 0; c < this.columnWidths.length; c++) {
+                if (c % this.options.columnsPerBlock === 0) {
+                    if (blockColumn !== -1) {
+                        this.blockLefts[blockColumn] = blockLeft;
+                        this.blockWidths[blockColumn] = blockWidth;
+                    }
+
+                    blockLeft += blockWidth;
+                    blockWidth = 0;
+                }
+
+                var w = this.provider.columnWidth(c);
+                this.columnWidths[c] = w;
+                this.totalWidth += w;
+                blockWidth += w;
+            }
+        }
+
+        measureRows() {
+            var blockRow = -1;
+            var blockTop = 0;
+            var blockHeight = 0;
+            this.totalHeight = 0;
+            for (var r = 0; r < this.rowHeights.length; r++) {
+                if (r % this.options.columnsPerBlock === 0) {
+                    if (blockRow !== -1) {
+                        this.blockTops[blockRow] = blockHeight;
+                        this.blockHeights[blockRow] = blockHeight;
+                    }
+
+                    blockTop += blockHeight;
+                    blockHeight = 0;
+                }
+
+                var h = this.options.dataProvider.rowHeight(r);
+                this.rowHeights[r] = h;
+                this.totalHeight += h;
+                blockHeight += h;
+            }
+        }
+
         measure() {
             if (this.columnWidths.length !== this.provider.columnCount) {
-                this.totalWidth = 0;
-                for (var c = 0; c < this.columnWidths.length; c++) {
-                    this.columnWidths[c] = this.provider.columnWidth(c);
-                    this.totalWidth += this.columnWidths[c];
-                }
+                this.measureColumns();
             }
 
             if (this.rowHeights.length !== this.provider.rowCount) {
-                this.totalHeight = 0;
-                for (var r = 0; r < this.rowHeights.length; r++) {
-                    this.rowHeights[r] = this.options.dataProvider.rowHeight(r);
-                    this.totalHeight += this.rowHeights[r];
-                }
+                this.measureRows();
             }
 
             this.content.style.width = this.totalWidth + 'px';
@@ -204,7 +250,7 @@ module TronGrid {
             var rangeIndex = this.scrollBounds.left;
             var blockIndex = 0;
             for (var r = 0; r < this.provider.rowCount; r += this.options.rowsPerBlock) {
-                for (var c = 0; c < this.provider.columnCount; r += this.options.columnsPerBlock) {
+                for (var c = 0; c < this.provider.columnCount; c += this.options.columnsPerBlock) {
                     var b = this.blocks[blockIndex];
                     if (!b) {
                          b = new CellBlock(
@@ -214,11 +260,16 @@ module TronGrid {
                             c + this.options.columnsPerBlock,
                             this.content,
                             this.provider,
-                            this.presenter);
+                             this.presenter);
+
+                        // AC: This performs a Divide, Floor, Multiply to give the Block Column Index and Block Row Index;
+                        var bc = (c / this.options.columnsPerBlock | 0) * this.options.columnsPerBlock;
+                        var br = (r / this.options.rowsPerBlock | 0) * this.options.rowsPerBlock;
+                        b.bounds = new Rectangle(this.blockLefts[bc], this.blockTops[br], this.blockWidths[bc], this.blockHeights[br]); 
                         this.blocks[blockIndex] = b;
                     } 
 
-                    if (b.boundingBox.intersects(this.scrollBounds)) {
+                    if (b.bounds.intersects(this.scrollBounds)) {
                         b.show();
                     } else {
                         b.hide();
@@ -279,19 +330,16 @@ module TronGrid {
             this.scrollChanged();
         }
     }
-
-    export class BindingHandler implements KnockoutBindingHandler {
-        init(element: HTMLElement, valueAccessor: () => any, allBindingsAccessor: KnockoutAllBindingsAccessor, viewModel: any, bindingContext: KnockoutBindingContext) {
-            var grid = new TronGrid(element);
-            ko.utils.domData.set(element, 'trongrid', grid);
-        }
-
-        update(element: any, valueAccessor: () => any, allBindingsAccessor: KnockoutAllBindingsAccessor, viewModel: any, bindingContext: KnockoutBindingContext) {
-            var o = valueAccessor();
-            var grid: TronGrid = ko.utils.domData.get(element, 'trongrid');
-            grid.update(o);
-        }
-    }
 }
 
-ko.bindingHandlers.tronGrid = new TronGrid.BindingHandler();
+ko.bindingHandlers.tronGrid = {
+    init: function (element: HTMLElement, valueAccessor: () => any, allBindingsAccessor: KnockoutAllBindingsAccessor, viewModel: any, bindingContext: KnockoutBindingContext) {
+        var grid = new TronGrid.TronGrid(element);
+        ko.utils.domData.set(element, 'trongrid', grid);
+    },
+    update: function (element: any, valueAccessor: () => any, allBindingsAccessor: KnockoutAllBindingsAccessor, viewModel: any, bindingContext: KnockoutBindingContext) {
+        var o = ko.unwrap(valueAccessor());
+        var grid: TronGrid.TronGrid = ko.utils.domData.get(element, 'trongrid');
+        grid.update(o);
+    }
+};

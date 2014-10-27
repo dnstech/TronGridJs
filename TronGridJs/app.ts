@@ -1,7 +1,9 @@
 ﻿/// <reference path="trongrid.ts" />
 
 class MainViewModel {
-    dataProvider = new SampleDataProvider();
+    options: TronGrid.IOptions = {
+        dataProvider: new SampleDataProvider()
+    }
 }
 
 class SampleDataProvider implements TronGrid.IDataProvider {
@@ -22,7 +24,4 @@ class SampleDataProvider implements TronGrid.IDataProvider {
     dataChanged: () => void;
 }
 
-window.onload = () => {
-    var el = document.getElementById('content');
-    ko.applyBindings(el, new MainViewModel());
-};
+ko.applyBindings(new MainViewModel());

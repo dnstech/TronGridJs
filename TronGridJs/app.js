@@ -1,7 +1,9 @@
 ﻿/// <reference path="trongrid.ts" />
 var MainViewModel = (function () {
     function MainViewModel() {
-        this.dataProvider = new SampleDataProvider();
+        this.options = {
+            dataProvider: new SampleDataProvider()
+        };
     }
     return MainViewModel;
 })();
@@ -25,8 +27,5 @@ var SampleDataProvider = (function () {
     return SampleDataProvider;
 })();
 
-window.onload = function () {
-    var el = document.getElementById('content');
-    ko.applyBindings(el, new MainViewModel());
-};
+ko.applyBindings(new MainViewModel());
 //# sourceMappingURL=app.js.map

@@ -1,20 +1,17 @@
 ﻿<!DOCTYPE html>
-
 <html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <title>TypeScript HTML App</title>
-    <link rel="stylesheet" href="app.css" type="text/css" />
-    <script src="jquery/jquery.js"></script>
-    <script src="knockout/knockout.debug.js"></script>
-    <script src="app.js"></script>
-</head>
-<body>
-    <h1>TypeScript HTML App</h1>
-    <div id="template" style="display:none;">
-        <span data-bind="text:value" />
-    </div>
-    <div id="content" data-bind="tronGrid: { items: data, template: selectTemplate }" style="overflow:auto">
-    </div>
-</body>
+    <head>
+        <meta charset="utf-8" />
+        <title>TypeScript HTML App</title>
+        <link rel="stylesheet" href="app.css" type="text/css" />
+        <script src="jquery/jquery.js"></script>
+        <script src="knockout/knockout.debug.js"></script>
+        <script src="trongrid.js"></script>
+    </head>
+    <body>
+        <h1>TronGrid Sample</h1>
+        <div id="scroller" data-bind="tronGrid: options" style="overflow:auto; background:black;width:500px; height:500px;">
+        </div>
+        <script src="app.js"></script>
+    </body>
 </html>
