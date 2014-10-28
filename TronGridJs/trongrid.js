@@ -1,12 +1,12 @@
 ﻿/// <reference path="types/knockout.d.ts" />
 /// <reference path="types/jquery.d.ts" />
 
-window.setImmediate = window.setImmediate || function (f, args) {
-    window.setTimeout(f, 0);
-};
-
 var TronGrid;
 (function (_TronGrid) {
+    _TronGrid.enqueue = window.setImmediate || function (f, args) {
+        window.setTimeout(f, 0);
+    };
+
     var CellBlock = (function () {
         function CellBlock(index, firstRow, lastRow, firstColumn, lastColumn, parent, grid) {
             this.index = index;
@@ -220,7 +220,7 @@ var TronGrid;
 
             this.renderQueued = true;
 
-            window.setImmediate(function () {
+            _TronGrid.enqueue(function () {
                 _this.renderQueued = false;
                 _this.render();
             });

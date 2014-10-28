@@ -5,9 +5,9 @@ interface KnockoutBindingHandlers {
     tronGrid: KnockoutBindingHandler;
 }
 
-(<any>window).setImmediate = window.setImmediate || function (f, args) { window.setTimeout(f, 0); };
-
 module TronGrid {
+    export var enqueue: { (action: () => void): void; } = <any>window.setImmediate || function (f, args) { window.setTimeout(f, 0); };
+
     export interface ISize {
         /** Width in Pixels */
         width: number;
@@ -260,7 +260,7 @@ module TronGrid {
 
             this.renderQueued = true;
 
-            window.setImmediate(() => {
+            enqueue(() => {
                 this.renderQueued = false;
                 this.render();
             });
