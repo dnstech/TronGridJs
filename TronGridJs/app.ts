@@ -10,7 +10,8 @@ class SampleDataProvider implements TronGrid.IDataProvider {
     rowCount = 1000;
     columnCount = 1000;
     cellData(r, c) {
-        return 'cell(' + r + ',' + c + ') ' + new Date();
+        var d = new Date();
+        return '[' + r + ',' + c + '] ' + d.getMinutes() + ':' + d.getSeconds();
     }
 
     rowHeight(r) {

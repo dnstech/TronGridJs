@@ -5,7 +5,8 @@
 var TronGrid;
 (function (_TronGrid) {
     var CellBlock = (function () {
-        function CellBlock(firstRow, lastRow, firstColumn, lastColumn, parent, grid) {
+        function CellBlock(index, firstRow, lastRow, firstColumn, lastColumn, parent, grid) {
+            this.index = index;
             this.firstRow = firstRow;
             this.lastRow = lastRow;
             this.firstColumn = firstColumn;
@@ -14,6 +15,9 @@ var TronGrid;
             this.grid = grid;
             this.isRendered = false;
             this.isVisible = false;
+            this.nextBlockId = '';
+            this.blockId = 'tgb_' + this.index;
+            this.nextBlockId = 'tgb_' + (this.index + 1);
         }
         CellBlock.prototype.show = function () {
             if (!this.isRendered) {
@@ -25,7 +29,8 @@ var TronGrid;
             }
 
             this.isVisible = true;
-            this.parent.appendChild(this.block);
+            this.block.style.display = 'inline-block';
+            this.parent.insertBefore(this.block, document.getElementById(this.nextBlockId));
         };
 
         CellBlock.prototype.hide = function () {
@@ -35,13 +40,14 @@ var TronGrid;
 
             this.isVisible = false;
             this.block.style.display = 'none';
+            this.parent.removeChild(this.block);
         };
 
         /** Binds to just the relevant portion of the full two-dimensional cells array */
         CellBlock.prototype.render = function () {
             if (!this.block) {
                 this.block = document.createElement('div');
-                this.block.setAttribute('id', 'tgb_' + this.firstRow + '_' + this.firstColumn);
+                this.block.setAttribute('id', this.blockId);
                 this.block.style.width = this.bounds.width + 'px';
                 this.block.style.height = this.bounds.height + 'px';
             } else {
@@ -78,11 +84,19 @@ var TronGrid;
         }
         Rectangle.prototype.intersects = function (other) {
             // DEBUG: Check for nans
-            if (isNaN(this.left) || isNaN(this.right) || isNaN(this.top) || isNaN(this.bottom)) {
-                return false;
+            if (!this.isValid()) {
+                throw 'Cannot intersect this is invalid: [' + this.toString() + ']';
+            }
+
+            if (!other.isValid()) {
+                throw 'Cannot intersect other is invalid: [' + other.toString() + ']';
             }
 
             return !(this.left > other.right || this.right < other.left || this.top > other.bottom || this.bottom < other.top);
+        };
+
+        Rectangle.prototype.isValid = function () {
+            return !isNaN(this.left) && !isNaN(this.right) && !isNaN(this.top) && !isNaN(this.bottom);
         };
 
         Rectangle.prototype.zeroSize = function () {
@@ -102,6 +116,10 @@ var TronGrid;
             element.style.left = this.left + 'px';
             element.style.bottom = this.bottom + 'px';
             element.style.right = this.right + 'px';
+        };
+
+        Rectangle.prototype.toString = function () {
+            return this.left + ',' + this.top + ',' + this.width + 'x' + this.height;
         };
 
         Rectangle.prototype.recalculate = function () {
@@ -154,12 +172,15 @@ var TronGrid;
         };
 
         TronGrid.prototype.scrollChanged = function () {
+            var _this = this;
             this.updateScrollBounds();
-            this.render();
+            window.setImmediate(function () {
+                _this.render();
+            });
         };
 
         TronGrid.prototype.updateScrollBounds = function () {
-            this.scrollBounds = new Rectangle(this.scroller.scrollLeft, this.scroller.scrollTop, this.scroller.offsetWidth, this.scroller.offsetHeight);
+            this.scrollBounds = new Rectangle(this.scroller.scrollLeft, this.scroller.scrollTop, this.scroller.clientWidth, this.scroller.clientHeight);
         };
 
         TronGrid.prototype.measureColumns = function () {
@@ -188,6 +209,8 @@ var TronGrid;
                 this.blockLefts[blockColumn] = blockLeft;
                 this.blockWidths[blockColumn] = blockWidth;
             }
+
+            this.content.style.width = this.totalWidth + 'px';
         };
 
         TronGrid.prototype.measureRows = function () {
@@ -216,6 +239,8 @@ var TronGrid;
                 this.blockTops[blockRow] = blockTop;
                 this.blockHeights[blockRow] = blockHeight;
             }
+
+            this.content.style.height = this.totalHeight + 'px';
         };
 
         TronGrid.prototype.measure = function () {
@@ -227,47 +252,56 @@ var TronGrid;
                 this.measureRows();
             }
 
-            this.content.style.width = this.totalWidth + 'px';
-            this.content.style.height = this.totalHeight + 'px';
-        };
-
-        TronGrid.prototype.render = function () {
-            var rangeIndex = this.scrollBounds.left;
-            var isTopLeftCell = true;
-            var renderedRow = false;
-            for (var r = 0; r < this.provider.rowCount; r += this.options.rowsPerBlock) {
-                renderedRow = false;
-                for (var c = 0; c < this.provider.columnCount; c += this.options.columnsPerBlock) {
-                    var blockIndex = (r * this.provider.columnCount) + c;
+            var blockIndex = 0;
+            for (var br = 0; br < this.blockHeights.length; br++) {
+                for (var bc = 0; bc < this.blockWidths.length; bc++) {
                     var b = this.blocks[blockIndex];
                     if (!b) {
-                        b = new CellBlock(r, r + this.options.rowsPerBlock, c, c + this.options.columnsPerBlock, this.content, this);
+                        b = new CellBlock(blockIndex, br * this.options.rowsPerBlock, (br * this.options.rowsPerBlock) + this.options.rowsPerBlock, (bc * this.options.columnsPerBlock), (bc * this.options.columnsPerBlock) + this.options.columnsPerBlock, this.content, this);
 
-                        // AC: This performs a Divide, Floor, Multiply to give the Block Column Index and Block Row Index;
-                        var bc = (c / this.options.columnsPerBlock | 0) * this.options.columnsPerBlock;
-                        var br = (r / this.options.rowsPerBlock | 0) * this.options.rowsPerBlock;
-                        b.bounds = new Rectangle(this.blockLefts[bc], this.blockTops[br], this.blockWidths[bc], this.blockHeights[br]);
                         this.blocks[blockIndex] = b;
                     }
 
-                    if (b.bounds.intersects(this.scrollBounds)) {
-                        renderedRow = true;
-                        b.show();
-                        if (isTopLeftCell) {
-                            isTopLeftCell = false;
-                        }
-                    } else {
-                        b.hide();
-
-                        // AC: Assume that's it for this row, note there may be some issues if we jump entire sections where blocks don't get hidden correctly.
-                        if (renderedRow) {
-                            break;
-                        }
+                    b.bounds = new Rectangle(this.blockLefts[bc], this.blockTops[br], this.blockWidths[bc], this.blockHeights[br]);
+                    if (!b.bounds.isValid()) {
+                        throw 'Invalid bounds ' + b.bounds.toString() + ', at index ' + blockIndex + '[' + br + ',' + bc + ']';
                     }
-
                     blockIndex++;
                 }
             }
+        };
+
+        TronGrid.prototype.render = function () {
+            if (!this.scrollBounds.isValid()) {
+                return;
+            }
+
+            var isTopLeftCell = true;
+            var renderedRow = false;
+            var blockColumnCount = (this.provider.columnCount / this.options.columnsPerBlock) | 0;
+            for (var br = 0; br < this.blockHeights.length; br++) {
+                for (var bc = 0; bc < this.blockWidths.length; bc++) {
+                    renderedRow = false;
+                    var blockIndex = (br * this.blockWidths.length) + bc;
+                    renderedRow = renderedRow || this.renderBlockAtIndex(blockIndex);
+                    if (renderedRow && isTopLeftCell) {
+                        this.content.style.paddingLeft = this.blocks[blockIndex].bounds.left + 'px';
+                        this.content.style.paddingTop = this.blocks[blockIndex].bounds.top + 'px';
+                        isTopLeftCell = false;
+                    }
+                }
+            }
+        };
+
+        TronGrid.prototype.renderBlockAtIndex = function (index) {
+            var b = this.blocks[index];
+            if (b.bounds.intersects(this.scrollBounds)) {
+                b.show();
+                return true;
+            }
+
+            b.hide();
+            return false;
         };
 
         TronGrid.prototype.dataChanged = function () {

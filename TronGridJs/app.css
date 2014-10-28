@@ -2,6 +2,10 @@
     font-family: 'Segoe UI', sans-serif;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 .tron-grid {
     overflow:auto; background:black;width:500px; height:500px;
 }

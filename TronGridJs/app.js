@@ -14,7 +14,8 @@ var SampleDataProvider = (function () {
         this.columnCount = 1000;
     }
     SampleDataProvider.prototype.cellData = function (r, c) {
-        return 'cell(' + r + ',' + c + ') ' + new Date();
+        var d = new Date();
+        return '[' + r + ',' + c + '] ' + d.getMinutes() + ':' + d.getSeconds();
     };
 
     SampleDataProvider.prototype.rowHeight = function (r) {
