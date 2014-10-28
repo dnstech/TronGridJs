@@ -2,7 +2,20 @@
 
 class MainViewModel {
     options: TronGrid.IOptions = {
-        dataProvider: new SampleDataProvider()
+        dataProvider: new SampleDataProvider(),
+        rowsPerBlock: 10,
+        columnsPerBlock: 3
+    }
+
+    timer: any;
+
+    lastUpdated = ko.observable('');
+    changeData() {
+        setInterval(() => {
+            var d = new Date();
+            this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
+            this.options.dataProvider.dataChanged();
+        }, 500);
     }
 }
 
@@ -15,11 +28,11 @@ class SampleDataProvider implements TronGrid.IDataProvider {
     }
 
     rowHeight(r) {
-        return 50;
+        return new Date().getSeconds() % 2 === 0 ? 50 : 25;
     }
 
     columnWidth(c) {
-        return 50;
+        return 100;
     }
 
     dataChanged: () => void;

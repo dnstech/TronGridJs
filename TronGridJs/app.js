@@ -2,9 +2,20 @@
 var MainViewModel = (function () {
     function MainViewModel() {
         this.options = {
-            dataProvider: new SampleDataProvider()
+            dataProvider: new SampleDataProvider(),
+            rowsPerBlock: 10,
+            columnsPerBlock: 3
         };
+        this.lastUpdated = ko.observable('');
     }
+    MainViewModel.prototype.changeData = function () {
+        var _this = this;
+        setInterval(function () {
+            var d = new Date();
+            _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
+            _this.options.dataProvider.dataChanged();
+        }, 500);
+    };
     return MainViewModel;
 })();
 
@@ -19,11 +30,11 @@ var SampleDataProvider = (function () {
     };
 
     SampleDataProvider.prototype.rowHeight = function (r) {
-        return 50;
+        return new Date().getSeconds() % 2 === 0 ? 50 : 25;
     };
 
     SampleDataProvider.prototype.columnWidth = function (c) {
-        return 50;
+        return 100;
     };
     return SampleDataProvider;
 })();
