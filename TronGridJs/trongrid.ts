@@ -1,6 +1,5 @@
 ﻿/// <reference path="types/knockout.d.ts" />
 /// <reference path="types/jquery.d.ts" />
-// Binary search from https://gist.github.com/uberbrady/10605041
 
 interface KnockoutBindingHandlers {
     tronGrid: KnockoutBindingHandler;
@@ -110,6 +109,8 @@ module TronGrid {
                     for (var c = this.firstColumn; c < this.lastColumn; c++) {
                         var cellData = this.grid.provider.cellData(r, c);
                         var cell = <HTMLDivElement>this.block.children[cellIndex];
+                        cell.style.width = this.grid.columnWidths[c] + 'px';
+                        cell.style.height = this.grid.rowHeights[r] + 'px';
                         this.grid.presenter.renderCell(cell, cellData, r, c);
                         cellIndex++;
                     }
