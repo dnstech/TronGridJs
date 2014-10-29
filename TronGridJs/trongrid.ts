@@ -25,10 +25,11 @@ module TronGrid {
         cellData: (row: number, column: number) => any;
         columnCount: number;
         rowCount: number;
-        dataChanged: (row?: number, column?: number) => void;
+        dataChanged?: (row?: number, column?: number) => void;
     }
 
     export interface IDataPresenter {
+        createCell?: (row?: number, column?: number) => HTMLElement;
         renderCell: (cell: HTMLElement, data: any, row?: number, column?: number) => void;
     }
 
@@ -171,7 +172,7 @@ module TronGrid {
         }
 
         createCellElement(r: number, c: number) {
-            var cell = document.createElement('div');
+            var cell = !!this.grid.presenter.createCell ? this.grid.presenter.createCell(r, c) : document.createElement('div');
             cell.setAttribute('id', 'tgc_' + r + '_' + c);
             cell.setAttribute('class', 'cell');
             return cell;
@@ -183,7 +184,14 @@ module TronGrid {
                 this.block = this.createBlockElement();
             }
 
-            if (this.block.childElementCount !== this.cellCount) {
+            this.renderBlock(this.block);
+
+            this.isMeasured = true;
+            this.isRendered = true;
+        }
+
+        renderBlock(block: HTMLDivElement) {
+            if (block.childElementCount !== this.cellCount) {
                 for (var r = this.firstRow; r < this.lastRow; r++) {
                     for (var c = this.firstColumn; c < this.lastColumn; c++) {
                         var cell = this.createCellElement(r, c);
@@ -196,18 +204,15 @@ module TronGrid {
                 var cellIndex = 0;
                 for (var r = this.firstRow; r < this.lastRow; r++) {
                     for (var c = this.firstColumn; c < this.lastColumn; c++) {
-                        var cell = <HTMLDivElement>this.block.children[cellIndex];
+                        var cell = <HTMLElement>block.children[cellIndex];
                         this.renderCell(r, c, cell);
                         cellIndex++;
                     }
                 }
             }
-
-            this.isMeasured = true;
-            this.isRendered = true;
         }
 
-        renderCell(r: number, c: number, cell: HTMLDivElement) {
+        renderCell(r: number, c: number, cell: HTMLElement) {
             var cellData = this.grid.provider.cellData(r, c);
             if (!this.isMeasured) {
                 cell.style.width = this.grid.columnWidths[c] + 'px';
@@ -761,6 +766,7 @@ module TronGrid {
         scrollTimestamp = 0;
         lastTouchX = 0;
         lastTouchY = 0;
+
         attach(attachToGrid: TronGrid) {
             if (!!this.grid) {
                 throw "This behavior has already been attached to a grid";

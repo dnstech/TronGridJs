@@ -4,11 +4,10 @@ var MainViewModel = (function () {
         this.log = ko.observableArray([]);
         this.lastUpdated = ko.observable('');
         this.options = {
-            dataProvider: new SampleDataProvider(),
-            ////dataPresenter: new TronGrid.KnockoutTemplatePresenter('SampleCellTemplate'),
-            rowsPerBlock: 10,
-            columnsPerBlock: 3,
-            behaviors: [new TronGrid.TouchScrollBehavior(this.log)]
+            dataProvider: new SampleChartDataProvider(),
+            dataPresenter: new SampleCanvasPresenter(),
+            rowsPerBlock: 1,
+            columnsPerBlock: 5
         };
     }
     MainViewModel.prototype.changeData = function () {
@@ -26,6 +25,48 @@ var MainViewModel = (function () {
         }, 500);
     };
     return MainViewModel;
+})();
+
+var SampleChartDataProvider = (function () {
+    function SampleChartDataProvider() {
+        this.rowCount = 100;
+        this.columnCount = 10000;
+    }
+    SampleChartDataProvider.prototype.rowHeight = function (r) {
+        return 200;
+    };
+
+    SampleChartDataProvider.prototype.columnWidth = function (c) {
+        return 100;
+    };
+
+    SampleChartDataProvider.prototype.cellData = function (r, c) {
+        var d = new Date();
+        return d.getMilliseconds();
+    };
+    return SampleChartDataProvider;
+})();
+
+var SampleCanvasPresenter = (function () {
+    function SampleCanvasPresenter() {
+    }
+    SampleCanvasPresenter.prototype.createCell = function (row, column) {
+        return document.createElement('canvas');
+    };
+
+    SampleCanvasPresenter.prototype.renderCell = function (cell, data, row, column) {
+        var context = cell.getContext("2d");
+        var h = (data / 5);
+        context.clearRect(0, 0, cell.width, cell.height);
+        context.beginPath();
+        context.rect(5, cell.height - h, cell.width - 10, h);
+        context.fillStyle = '#ccc';
+        context.fill();
+        context.lineWidth = 1;
+        context.strokeStyle = 'white';
+        context.stroke();
+    };
+    return SampleCanvasPresenter;
 })();
 
 var SampleDataProvider = (function () {
