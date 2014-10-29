@@ -131,17 +131,21 @@ var TronGrid;
                 var cellIndex = 0;
                 for (var r = this.firstRow; r < this.lastRow; r++) {
                     for (var c = this.firstColumn; c < this.lastColumn; c++) {
-                        var cellData = this.grid.provider.cellData(r, c);
-                        var cell = this.block.children[cellIndex];
-                        cell.style.width = this.grid.columnWidths[c] + 'px';
-                        cell.style.height = this.grid.rowHeights[r] + 'px';
-                        this.grid.presenter.renderCell(cell, cellData, r, c);
+                        this.recycleCell(r, c, cellIndex);
                         cellIndex++;
                     }
                 }
             }
 
             this.isRendered = true;
+        };
+
+        CellBlock.prototype.recycleCell = function (r, c, cellIndex) {
+            var cellData = this.grid.provider.cellData(r, c);
+            var cell = this.block.children[cellIndex];
+            cell.style.width = this.grid.columnWidths[c] + 'px';
+            cell.style.height = this.grid.rowHeights[r] + 'px';
+            this.grid.presenter.renderCell(cell, cellData, r, c);
         };
 
         CellBlock.prototype.renderNewCell = function (r, c) {
