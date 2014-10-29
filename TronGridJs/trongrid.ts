@@ -6,7 +6,7 @@ interface KnockoutBindingHandlers {
 }
 
 module TronGrid {
-    export var enqueue: { (action: () => void): void; } = <any>window.setImmediate ? function (f) {
+    export var enqueue: { (action: () => void): void; } = !!<any>window.setImmediate ? function (f) {
             window.setImmediate(f);
         } : function (f) {
             window.setTimeout(f, 0);
@@ -25,7 +25,7 @@ module TronGrid {
         cellData: (row: number, column: number) => any;
         columnCount: number;
         rowCount: number;
-        dataChanged: () => void;
+        dataChanged: (row?: number, column?: number) => void;
     }
 
     export interface IDataPresenter {
@@ -48,9 +48,50 @@ module TronGrid {
         initialRow?: number;
     }
 
-    function insertAfter(parent: HTMLElement, newNode: HTMLElement, referenceNode: HTMLElement) {
-        if (referenceNode) {
-            parent.insertBefore(newNode, referenceNode.nextSibling);
+    function padLeft(n, w) {
+        var n_ = Math.abs(n);
+        var zeros = Math.max(0, w - Math.floor(n_).toString().length);
+        var zeroString = Math.pow(10, zeros).toString().substr(1);
+        if (n < 0) {
+            zeroString = '-' + zeroString;
+        }
+
+        return zeroString + n;
+    }
+
+    function binarySearch<T, TValue>(array: T[], findValue: TValue, compareFunction: (a: T, b: TValue) => number, startIndex: number = 0, length: number = array.length) {
+        var num1 = startIndex;
+        var num2 = startIndex + length - 1;
+        while (num1 <= num2) {
+            var index1 = num1 + (num2 - num1 >> 1);
+            var num3 = compareFunction(array[index1], findValue);
+            if (num3 == 0) {
+                return index1;
+            }
+
+            if (num3 < 0) {
+                num1 = index1 + 1;
+            } else {
+                num2 = index1 - 1;
+            }
+        }
+
+        return ~num1;
+    }
+
+    function insertSortedById(parent: HTMLElement, newNode: HTMLElement) {
+        var id = newNode.id;
+        var index = -1;
+        for (var i = 0; i < parent.children.length; i++) {
+            var nextId = (<any>parent.children[i]).id;
+            if (!!nextId && id < nextId) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index !== -1) {
+            parent.insertBefore(newNode, parent.children[index]);
         } else {
             parent.appendChild(newNode);
         }
@@ -58,11 +99,11 @@ module TronGrid {
 
     class CellBlock {
         bounds: Rectangle;
+        needsCleanup = false;
         isRendered: boolean = false;
         isVisible: boolean = false;
         block: HTMLDivElement;
         blockId: string;
-        previousBlockId: string = null;
         cellCount = 0;
 
         constructor(
@@ -71,11 +112,12 @@ module TronGrid {
             public lastRow: number,
             public firstColumn: number,
             public lastColumn: number,
+            public blockRow: number,
+            public blockColumn: number,
             private parent: HTMLElement,
             private grid: TronGrid.TronGrid) {
             this.cellCount = (this.lastRow - this.firstRow) * (this.lastColumn - this.firstColumn);
-            this.blockId = 'tgb_' + this.index;
-            this.previousBlockId = this.index !== 0  ? 'tgb_' + (this.index - 1) : null;
+            this.blockId = 'tgb_' + padLeft(this.index, 10);
         }
 
         show() {
@@ -87,12 +129,10 @@ module TronGrid {
                 return;
             }
 
+            this.needsCleanup = false;
             this.isVisible = true;
-            this.block.style.display = 'inline-block';
-            console.log('insertAfter', this.block.id, this.previousBlockId);
-
-            // TODO: Fix positioning bug, need to find where we belong in the parent's current list of children.
-            insertAfter(this.parent, this.block, !!this.previousBlockId ? document.getElementById(this.previousBlockId) : null);
+            //this.block.style.display = '';
+            insertSortedById(this.parent, this.block);
         }
 
         hide() {
@@ -101,7 +141,8 @@ module TronGrid {
             }
 
             this.isVisible = false;
-            this.block.style.display = 'none';
+            this.needsCleanup = false;
+            //this.block.style.display = 'none';
             this.parent.removeChild(this.block);
         }
 
@@ -163,6 +204,38 @@ module TronGrid {
             this.recalculate();
         }
 
+        compareX(x: number) {
+            if (this.left > x)
+                return -1;
+            if (this.right < x)
+                return 1;
+
+            return 0;
+        }
+
+        compareY(y: number) {
+            if (this.top > y)
+                return -1;
+            if (this.bottom < y)
+                return 1;
+
+            return 0;
+        }
+
+        /** Compares this rectangle to the point specified */
+        compareToPoint(x: number, y: number) {
+            if (this.left > x) 
+                return -1;
+            if (this.right < x)
+                return 1;
+            if (this.top > y)
+                return -1;
+            if (this.bottom < y)
+                return 1;
+
+            return 0;
+        }
+
         intersects(other: Rectangle) {
             // DEBUG: Check for nans
             if (!this.isValid()) {
@@ -220,12 +293,15 @@ module TronGrid {
 
     export class TextPresenter implements IDataPresenter {
         renderCell(cell: HTMLElement, data: any) {
-            cell.innerText = data;
+            cell.textContent = data;
         }
     }
 
     export class KnockoutTemplatePresenter implements IDataPresenter {
-        template: any;
+        constructor(template: string);
+        constructor(template: (data:any) => string);
+        constructor(public template: any) {
+        }
 
         renderCell(cell: HTMLElement, data: any) {
             ko.renderTemplate(this.template, data, undefined, cell);
@@ -243,6 +319,7 @@ module TronGrid {
         };
 
         renderQueued = false;
+        measureQueued = false;
         options: IOptions = this.defaultOptions;
         dataSubscription: KnockoutSubscription;
 
@@ -259,8 +336,13 @@ module TronGrid {
         presenter: IDataPresenter;
         content: HTMLDivElement;
         blockContainer: HTMLDivElement;
+        blockContainerWidth = 0;
+        blockContainerHeight = 0;
+        blockContainerLeft = 0;
+        blockContainerTop = 0;
 
         private blocks: CellBlock[] = [];
+        private visibleBlocks: CellBlock[] = [];
         private scrollBounds: Rectangle;
 
         constructor(public scroller: HTMLElement) {
@@ -283,6 +365,21 @@ module TronGrid {
         scrollChanged() {
             this.updateScrollBounds();
             this.enqueueRender();
+        }
+
+        enqueueMeasureAndRender() {
+            if (this.measureQueued) {
+                return;
+            }
+
+            this.measureQueued = true;
+            this.renderQueued = true;
+            enqueue(() => {
+                this.measureQueued = false;
+                this.renderQueued = false;
+                this.measure();
+                this.render();
+            });
         }
 
         enqueueRender() {
@@ -392,6 +489,8 @@ module TronGrid {
                             (br * this.options.rowsPerBlock) + this.options.rowsPerBlock,
                             (bc * this.options.columnsPerBlock),
                             (bc * this.options.columnsPerBlock) + this.options.columnsPerBlock,
+                            br,
+                            bc,
                             this.blockContainer,
                             this);
 
@@ -417,28 +516,76 @@ module TronGrid {
                 return;
             }
 
-            var lookaheadBounds = this.scrollBounds;
+            var lookaheadBounds = this.scrollBounds.resize({
+                    width: this.scrollBounds.width * 2,
+                    height: this.scrollBounds.height * 2
+                });
 
-            ////.resize({
-            ////        width: this.scrollBounds.width * 2,
-            ////        height: this.scrollBounds.height * 2
-            ////    });
+
+            var leftBlockIndex = 0;
+            var topBlockIndex = 0;
+            var leftBlockIndex = binarySearch(this.blockLefts, lookaheadBounds.left, (a, b) => {
+                if (a > b)
+                    return 1;
+                if (a < b)
+                    return -1;
+
+                return 0;
+            });
+
+            if (leftBlockIndex < 0) {
+                // Bitwise complement would give place to insert, go one left from that to give the first visible block
+                leftBlockIndex = Math.max(0, ~leftBlockIndex - 1);
+            }
+
+            var topBlockIndex = binarySearch(this.blockTops, lookaheadBounds.top, (a, b) => {
+                if (a > b)
+                    return 1;
+                if (a < b)
+                    return -1;
+
+                return 0;
+            });
+
+
+            if (topBlockIndex < 0) {
+                // Bitwise complement would give place to insert, go one up from that to give the first visible block
+                topBlockIndex = Math.max(0, ~topBlockIndex - 1);
+            }
+
+            var blockColumnCount = (this.provider.columnCount / this.options.columnsPerBlock) | 0;
 
             var visibleBlockWidth = 0;
             var visibleBlockHeight = 0;
             var isTopLeftCell = true;
             var renderedRow = false;
-            var blockColumnCount = (this.provider.columnCount / this.options.columnsPerBlock) | 0;
-            for (var br = 0; br < this.blockHeights.length; br++) {
+            var hasRendered = false;
+
+            for (var i = 0; i < this.blocks.length; i++) {
+                if (this.blocks[i].isVisible) {
+                    this.blocks[i].needsCleanup = true;
+                }
+            }
+
+            for (var br = topBlockIndex; br < this.blockHeights.length; br++) {
                 renderedRow = false;
                 var width = 0;
-                for (var bc = 0; bc < this.blockWidths.length; bc++) {
+                for (var bc = leftBlockIndex; bc < this.blockWidths.length; bc++) {
                     var blockIndex = (br * this.blockWidths.length) + bc;
-                    var visible = this.renderBlockAtIndex(blockIndex, lookaheadBounds);
+                    var block = this.blocks[blockIndex];
+                    var visible = this.renderBlock(block, lookaheadBounds);
                     renderedRow = renderedRow || visible;
                     if (renderedRow && isTopLeftCell) {
-                        this.content.style.paddingLeft = this.blocks[blockIndex].bounds.left + 'px';
-                        this.content.style.paddingTop = this.blocks[blockIndex].bounds.top + 'px';
+                        if (this.blockContainerLeft !== block.bounds.left) {
+                            this.blockContainerLeft = block.bounds.left;
+                            this.content.style.paddingLeft = block.bounds.left + 'px';
+                        }
+
+                        if (this.blockContainerTop !== block.bounds.top) {
+                            this.blockContainerTop = block.bounds.top;
+                            this.content.style.paddingTop = block.bounds.top + 'px';
+                        }
+
                         isTopLeftCell = false;
                     }
 
@@ -448,29 +595,50 @@ module TronGrid {
                 }
 
                 if (renderedRow) {
+                    hasRendered = true;
                     visibleBlockWidth = width;
                     visibleBlockHeight += this.blocks[blockIndex].bounds.height;
+                } else {
+                    if (hasRendered) {
+                        break;
+                    }
                 }
             }
 
-            this.blockContainer.style.width = visibleBlockWidth + 'px';
-            this.blockContainer.style.height = visibleBlockHeight + 'px';
+            for (var i = 0; i < this.blocks.length; i++) {
+                if (this.blocks[i].needsCleanup) {
+                    this.blocks[i].hide();
+                }
+            }
+
+            if (this.blockContainerWidth !== visibleBlockWidth) {
+                this.blockContainerWidth = visibleBlockWidth;
+                this.blockContainer.style.width = visibleBlockWidth + 'px';
+            }
+
+            if (this.blockContainerHeight !== visibleBlockHeight) {
+                this.blockContainerHeight = visibleBlockHeight;
+                this.blockContainer.style.height = visibleBlockHeight + 'px';
+            }
         }
 
-        renderBlockAtIndex(index: number, bounds: Rectangle) {
-            var b = this.blocks[index];
-            if (b.bounds.intersects(bounds)) {
-                b.show();
+        private renderBlock(block: CellBlock, bounds: Rectangle) {
+            block.needsCleanup = false;
+            if (block.bounds.intersects(bounds)) {
+                block.show();
                 return true;
-            } 
+            }
 
-            b.hide();
+            block.hide();
             return false;
         }
 
-        dataChanged() {
+        dataChanged(row?: number, column?: number) {
             ////this.disposeData();
 
+            // Row set, but column undefined invalidates an entire row,
+            // Column set, but row undefined invalidates an entire column.
+            // Both row and column set invalidates a cell.
             for (var i = 0; i < this.blocks.length; i++) {
                 this.blocks[i].invalidate();
             }
@@ -478,8 +646,7 @@ module TronGrid {
             ////// TODO: Use ko.compareArrays to be more efficient and bind only affected ranges
             ////this.cells = updatedCells;
 
-            this.measure();
-            this.enqueueRender();
+            this.enqueueMeasureAndRender();
             ////this.subscribeData();
         }
 

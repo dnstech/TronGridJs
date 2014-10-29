@@ -3,6 +3,7 @@ var MainViewModel = (function () {
     function MainViewModel() {
         this.options = {
             dataProvider: new SampleDataProvider(),
+            ////dataPresenter: new TronGrid.KnockoutTemplatePresenter('SampleCellTemplate'),
             rowsPerBlock: 10,
             columnsPerBlock: 3
         };

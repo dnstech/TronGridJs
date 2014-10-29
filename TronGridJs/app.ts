@@ -3,6 +3,7 @@
 class MainViewModel {
     options: TronGrid.IOptions = {
         dataProvider: new SampleDataProvider(),
+        ////dataPresenter: new TronGrid.KnockoutTemplatePresenter('SampleCellTemplate'),
         rowsPerBlock: 10,
         columnsPerBlock: 3
     }
