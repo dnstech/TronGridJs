@@ -54,7 +54,9 @@ var SampleCanvasPresenter = (function () {
         return document.createElement('canvas');
     };
 
-    SampleCanvasPresenter.prototype.renderCell = function (cell, data, row, column) {
+    SampleCanvasPresenter.prototype.renderCell = function (cell, data, row, column, size) {
+        cell.width = size.width;
+        cell.height = size.height;
         var context = cell.getContext("2d");
         var h = (data / 5);
         context.clearRect(0, 0, cell.width, cell.height);
@@ -65,6 +67,10 @@ var SampleCanvasPresenter = (function () {
         context.lineWidth = 1;
         context.strokeStyle = 'white';
         context.stroke();
+        context.font = '18pt Calibri';
+        context.fillStyle = 'white';
+        context.textAlign = 'center';
+        context.fillText('T: ' + data, cell.width / 2, cell.height - 30, cell.width - 10);
     };
     return SampleCanvasPresenter;
 })();

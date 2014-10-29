@@ -165,13 +165,17 @@ var TronGrid;
         };
 
         CellBlock.prototype.renderCell = function (r, c, cell) {
+            var size = {
+                width: this.grid.columnWidths[c],
+                height: this.grid.rowHeights[r]
+            };
             var cellData = this.grid.provider.cellData(r, c);
             if (!this.isMeasured) {
-                cell.style.width = this.grid.columnWidths[c] + 'px';
-                cell.style.height = this.grid.rowHeights[r] + 'px';
+                cell.style.width = size.width + 'px';
+                cell.style.height = size.height + 'px';
             }
 
-            this.grid.presenter.renderCell(cell, cellData, r, c);
+            this.grid.presenter.renderCell(cell, cellData, r, c, size);
         };
         return CellBlock;
     })();
@@ -327,7 +331,7 @@ var TronGrid;
             this.provider = this.options.dataProvider;
             this.presenter = this.options.dataPresenter;
             this.provider.dataChanged = this.dataChanged.bind(this);
-            this.scroller.className = 'tron-grid';
+            this.scroller.className += ' tron-grid';
 
             ////this.content = document.createElement('div');
             ////this.content.className = 'tron-grid-viewport';

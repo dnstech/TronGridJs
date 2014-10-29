@@ -53,7 +53,9 @@ class SampleCanvasPresenter implements TronGrid.IDataPresenter {
         return document.createElement('canvas');
     }
 
-    renderCell(cell: HTMLCanvasElement, data: any, row?: number, column?: number) {
+    renderCell(cell: HTMLCanvasElement, data: any, row: number, column: number, size: TronGrid.ISize) {
+        cell.width = size.width;
+        cell.height = size.height;
         var context = cell.getContext("2d");
         var h = (data / 5);
         context.clearRect(0, 0, cell.width, cell.height);
@@ -64,6 +66,10 @@ class SampleCanvasPresenter implements TronGrid.IDataPresenter {
         context.lineWidth = 1;
         context.strokeStyle = 'white';
         context.stroke();
+        context.font = '18pt Calibri';
+        context.fillStyle = 'white';
+        context.textAlign = 'center';
+        context.fillText('T: ' + data, cell.width / 2, cell.height - 30, cell.width - 10);
     }
 }
 
