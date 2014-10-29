@@ -76,6 +76,8 @@ var TronGrid;
             this.isVisible = false;
             this.isMeasured = false;
             this.cellCount = 0;
+            this.currentLeft = 0;
+            this.currentTop = 0;
             this.cellCount = (this.lastRow - this.firstRow) * (this.lastColumn - this.firstColumn);
             this.blockId = 'tgb_' + padLeft(this.index, 10);
         }
@@ -169,10 +171,28 @@ var TronGrid;
                 width: this.grid.columnWidths[c],
                 height: this.grid.rowHeights[r]
             };
+
             var cellData = this.grid.provider.cellData(r, c);
             if (!this.isMeasured) {
+                if (c === this.firstColumn) {
+                    this.currentLeft = 0;
+                }
+
+                if (r === this.firstRow) {
+                    this.currentTop = 0;
+                }
+
+                cell.style.left = this.currentLeft + 'px';
+                cell.style.top = this.currentTop + 'px';
                 cell.style.width = size.width + 'px';
                 cell.style.height = size.height + 'px';
+
+                if (c === this.lastColumn - 1) {
+                    this.currentLeft = 0;
+                    this.currentTop += size.height;
+                } else {
+                    this.currentLeft += size.width;
+                }
             }
 
             this.grid.presenter.renderCell(cell, cellData, r, c, size);

@@ -212,15 +212,37 @@ module TronGrid {
             }
         }
 
+
+        currentLeft = 0;
+        currentTop = 0;
+
         renderCell(r: number, c: number, cell: HTMLElement) {
             var size = {
                 width: this.grid.columnWidths[c],
                 height: this.grid.rowHeights[r]
             };
+            
             var cellData = this.grid.provider.cellData(r, c);
             if (!this.isMeasured) {
+                if (c === this.firstColumn) {
+                    this.currentLeft = 0;
+                }
+
+                if (r === this.firstRow) {
+                    this.currentTop = 0;
+                }
+
+                cell.style.left = this.currentLeft + 'px';
+                cell.style.top = this.currentTop + 'px';
                 cell.style.width = size.width + 'px';
                 cell.style.height = size.height + 'px';
+
+                if (c === this.lastColumn - 1) {
+                    this.currentLeft = 0;
+                    this.currentTop += size.height;
+                } else {
+                    this.currentLeft += size.width;
+                }
             }
 
             this.grid.presenter.renderCell(cell, cellData, r, c, size);

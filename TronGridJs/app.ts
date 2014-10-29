@@ -5,15 +5,23 @@ class MainViewModel {
     timer: any;
     lastUpdated = ko.observable('');
 
-    options: TronGrid.IOptions = {
-        dataProvider: new SampleChartDataProvider(),
-        dataPresenter: new SampleCanvasPresenter(),
-        rowsPerBlock: 1,
-        columnsPerBlock: 5
+    textOptions: TronGrid.IOptions = {
+        dataProvider: new SampleDataProvider(),
+        dataPresenter: new TronGrid.TextPresenter(),
+        rowsPerBlock: 10,
+        columnsPerBlock: 20
         //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
     }
 
-    changeData() {
+    canvasOptions: TronGrid.IOptions = {
+        dataProvider: new SampleChartDataProvider(),
+        dataPresenter: new SampleCanvasPresenter(),
+        rowsPerBlock: 2,
+        columnsPerBlock: 10
+        //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
+    }
+
+    changeTextData() {
         if (!!this.timer) {
             window.clearInterval(this.timer);
             this.timer = null;
@@ -23,7 +31,21 @@ class MainViewModel {
         this.timer = setInterval(() => {
             var d = new Date();
             this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
-            this.options.dataProvider.dataChanged();
+            this.textOptions.dataProvider.dataChanged();
+        }, 500);
+    }
+
+    changeCanvasData() {
+        if (!!this.timer) {
+            window.clearInterval(this.timer);
+            this.timer = null;
+            return;
+        }
+
+        this.timer = setInterval(() => {
+            var d = new Date();
+            this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
+            this.canvasOptions.dataProvider.dataChanged();
         }, 500);
     }
 }

@@ -3,14 +3,20 @@ var MainViewModel = (function () {
     function MainViewModel() {
         this.log = ko.observableArray([]);
         this.lastUpdated = ko.observable('');
-        this.options = {
+        this.textOptions = {
+            dataProvider: new SampleDataProvider(),
+            dataPresenter: new TronGrid.TextPresenter(),
+            rowsPerBlock: 10,
+            columnsPerBlock: 20
+        };
+        this.canvasOptions = {
             dataProvider: new SampleChartDataProvider(),
             dataPresenter: new SampleCanvasPresenter(),
-            rowsPerBlock: 1,
-            columnsPerBlock: 5
+            rowsPerBlock: 2,
+            columnsPerBlock: 10
         };
     }
-    MainViewModel.prototype.changeData = function () {
+    MainViewModel.prototype.changeTextData = function () {
         var _this = this;
         if (!!this.timer) {
             window.clearInterval(this.timer);
@@ -21,7 +27,22 @@ var MainViewModel = (function () {
         this.timer = setInterval(function () {
             var d = new Date();
             _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
-            _this.options.dataProvider.dataChanged();
+            _this.textOptions.dataProvider.dataChanged();
+        }, 500);
+    };
+
+    MainViewModel.prototype.changeCanvasData = function () {
+        var _this = this;
+        if (!!this.timer) {
+            window.clearInterval(this.timer);
+            this.timer = null;
+            return;
+        }
+
+        this.timer = setInterval(function () {
+            var d = new Date();
+            _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
+            _this.canvasOptions.dataProvider.dataChanged();
         }, 500);
     };
     return MainViewModel;

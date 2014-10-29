@@ -27,8 +27,9 @@ body {
     outline: 1px solid blue;
     overflow:hidden;
     color:white;
-    float: left;
-    padding: 4px;
+    /*float: left;*/
+    /*padding: 4px;*/
+    position:absolute;
 }
 
 .tron-grid .block {
