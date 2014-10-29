@@ -22,9 +22,11 @@ body {
     overflow:hidden;
     color:white;
     float: left;
+    padding: 4px;
 }
 
 .tron-grid .block {
     outline: 2px solid red;
     overflow:hidden;
+    float:left;
 }

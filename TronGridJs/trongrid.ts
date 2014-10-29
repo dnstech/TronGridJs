@@ -6,7 +6,11 @@ interface KnockoutBindingHandlers {
 }
 
 module TronGrid {
-    export var enqueue: { (action: () => void): void; } = <any>window.setImmediate || function (f, args) { window.setTimeout(f, 0); };
+    export var enqueue: { (action: () => void): void; } = <any>window.setImmediate ? function (f) {
+            window.setImmediate(f);
+        } : function (f) {
+            window.setTimeout(f, 0);
+        };
 
     export interface ISize {
         /** Width in Pixels */
@@ -29,12 +33,27 @@ module TronGrid {
     }
 
     export interface IOptions {
+        dataProvider: IDataProvider;
+
+        /** Implementation of a renderer that fill's in a cell's content, defaults to TextPresenter */
+        dataPresenter?: IDataPresenter;
+
         /** Number of rows per CellBlock */
         rowsPerBlock?: number;
+
         /** Number of columns per CellBlock */
         columnsPerBlock?: number;
-        dataProvider: IDataProvider;
-        dataPresenter?: IDataPresenter;
+
+        initialColumn?: number;
+        initialRow?: number;
+    }
+
+    function insertAfter(parent: HTMLElement, newNode: HTMLElement, referenceNode: HTMLElement) {
+        if (referenceNode) {
+            parent.insertBefore(newNode, referenceNode.nextSibling);
+        } else {
+            parent.appendChild(newNode);
+        }
     }
 
     class CellBlock {
@@ -43,7 +62,7 @@ module TronGrid {
         isVisible: boolean = false;
         block: HTMLDivElement;
         blockId: string;
-        nextBlockId: string = '';
+        previousBlockId: string = null;
         cellCount = 0;
 
         constructor(
@@ -56,7 +75,7 @@ module TronGrid {
             private grid: TronGrid.TronGrid) {
             this.cellCount = (this.lastRow - this.firstRow) * (this.lastColumn - this.firstColumn);
             this.blockId = 'tgb_' + this.index;
-            this.nextBlockId = 'tgb_' + (this.index + 1);
+            this.previousBlockId = this.index !== 0  ? 'tgb_' + (this.index - 1) : null;
         }
 
         show() {
@@ -70,7 +89,10 @@ module TronGrid {
 
             this.isVisible = true;
             this.block.style.display = 'inline-block';
-            this.parent.insertBefore(this.block, document.getElementById(this.nextBlockId));
+            console.log('insertAfter', this.block.id, this.previousBlockId);
+
+            // TODO: Fix positioning bug, need to find where we belong in the parent's current list of children.
+            insertAfter(this.parent, this.block, !!this.previousBlockId ? document.getElementById(this.previousBlockId) : null);
         }
 
         hide() {
@@ -92,6 +114,7 @@ module TronGrid {
             if (!this.block) {
                 this.block = document.createElement('div');
                 this.block.setAttribute('id', this.blockId);
+                this.block.setAttribute('class', 'block');
                 this.block.style.width = this.bounds.width + 'px';
                 this.block.style.height = this.bounds.height + 'px';
             }
@@ -195,9 +218,17 @@ module TronGrid {
         }
     }
 
-    class TextPresenter implements IDataPresenter {
+    export class TextPresenter implements IDataPresenter {
         renderCell(cell: HTMLElement, data: any) {
             cell.innerText = data;
+        }
+    }
+
+    export class KnockoutTemplatePresenter implements IDataPresenter {
+        template: any;
+
+        renderCell(cell: HTMLElement, data: any) {
+            ko.renderTemplate(this.template, data, undefined, cell);
         }
     }
 
@@ -206,7 +237,9 @@ module TronGrid {
         defaultOptions: IOptions = <any>{
             dataPresenter: new TextPresenter(),
             rowsPerBlock: 10,
-            columnsPerBlock: 10
+            columnsPerBlock: 10,
+            initialColumn: 0,
+            initialRow: 0
         };
 
         renderQueued = false;
@@ -235,8 +268,7 @@ module TronGrid {
         }
 
         update(o: IOptions) {
-            this.options = o;
-            $.extend(this.options, this.defaultOptions);
+            this.options = $.extend({}, this.defaultOptions, o);
             this.provider = this.options.dataProvider;
             this.presenter = this.options.dataPresenter;
             this.provider.dataChanged = this.dataChanged.bind(this);
@@ -385,10 +417,12 @@ module TronGrid {
                 return;
             }
 
-            var lookaheadBounds = this.scrollBounds.resize({
-                    width: this.scrollBounds.width * 2,
-                    height: this.scrollBounds.height * 2
-                });
+            var lookaheadBounds = this.scrollBounds;
+
+            ////.resize({
+            ////        width: this.scrollBounds.width * 2,
+            ////        height: this.scrollBounds.height * 2
+            ////    });
 
             var visibleBlockWidth = 0;
             var visibleBlockHeight = 0;

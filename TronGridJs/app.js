@@ -10,7 +10,13 @@ var MainViewModel = (function () {
     }
     MainViewModel.prototype.changeData = function () {
         var _this = this;
-        setInterval(function () {
+        if (!!this.timer) {
+            window.clearInterval(this.timer);
+            this.timer = null;
+            return;
+        }
+
+        this.timer = setInterval(function () {
             var d = new Date();
             _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
             _this.options.dataProvider.dataChanged();

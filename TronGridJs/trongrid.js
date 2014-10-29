@@ -3,9 +3,19 @@
 
 var TronGrid;
 (function (_TronGrid) {
-    _TronGrid.enqueue = window.setImmediate || function (f, args) {
+    _TronGrid.enqueue = window.setImmediate ? function (f) {
+        window.setImmediate(f);
+    } : function (f) {
         window.setTimeout(f, 0);
     };
+
+    function insertAfter(parent, newNode, referenceNode) {
+        if (referenceNode) {
+            parent.insertBefore(newNode, referenceNode.nextSibling);
+        } else {
+            parent.appendChild(newNode);
+        }
+    }
 
     var CellBlock = (function () {
         function CellBlock(index, firstRow, lastRow, firstColumn, lastColumn, parent, grid) {
@@ -18,11 +28,11 @@ var TronGrid;
             this.grid = grid;
             this.isRendered = false;
             this.isVisible = false;
-            this.nextBlockId = '';
+            this.previousBlockId = null;
             this.cellCount = 0;
             this.cellCount = (this.lastRow - this.firstRow) * (this.lastColumn - this.firstColumn);
             this.blockId = 'tgb_' + this.index;
-            this.nextBlockId = 'tgb_' + (this.index + 1);
+            this.previousBlockId = this.index !== 0 ? 'tgb_' + (this.index - 1) : null;
         }
         CellBlock.prototype.show = function () {
             if (!this.isRendered) {
@@ -35,7 +45,10 @@ var TronGrid;
 
             this.isVisible = true;
             this.block.style.display = 'inline-block';
-            this.parent.insertBefore(this.block, document.getElementById(this.nextBlockId));
+            console.log('insertAfter', this.block.id, this.previousBlockId);
+
+            // TODO: Fix positioning bug, need to find where we belong in the parent's current list of children.
+            insertAfter(this.parent, this.block, !!this.previousBlockId ? document.getElementById(this.previousBlockId) : null);
         };
 
         CellBlock.prototype.hide = function () {
@@ -57,6 +70,7 @@ var TronGrid;
             if (!this.block) {
                 this.block = document.createElement('div');
                 this.block.setAttribute('id', this.blockId);
+                this.block.setAttribute('class', 'block');
                 this.block.style.width = this.bounds.width + 'px';
                 this.block.style.height = this.bounds.height + 'px';
             }
@@ -170,6 +184,17 @@ var TronGrid;
         };
         return TextPresenter;
     })();
+    _TronGrid.TextPresenter = TextPresenter;
+
+    var KnockoutTemplatePresenter = (function () {
+        function KnockoutTemplatePresenter() {
+        }
+        KnockoutTemplatePresenter.prototype.renderCell = function (cell, data) {
+            ko.renderTemplate(this.template, data, undefined, cell);
+        };
+        return KnockoutTemplatePresenter;
+    })();
+    _TronGrid.KnockoutTemplatePresenter = KnockoutTemplatePresenter;
 
     /** The main grid logic, which is attached to the Scroller via the binding handler */
     var TronGrid = (function () {
@@ -178,7 +203,9 @@ var TronGrid;
             this.defaultOptions = {
                 dataPresenter: new TextPresenter(),
                 rowsPerBlock: 10,
-                columnsPerBlock: 10
+                columnsPerBlock: 10,
+                initialColumn: 0,
+                initialRow: 0
             };
             this.renderQueued = false;
             this.options = this.defaultOptions;
@@ -194,8 +221,7 @@ var TronGrid;
             this.registerEventHandlers();
         }
         TronGrid.prototype.update = function (o) {
-            this.options = o;
-            $.extend(this.options, this.defaultOptions);
+            this.options = $.extend({}, this.defaultOptions, o);
             this.provider = this.options.dataProvider;
             this.presenter = this.options.dataPresenter;
             this.provider.dataChanged = this.dataChanged.bind(this);
@@ -330,11 +356,12 @@ var TronGrid;
                 return;
             }
 
-            var lookaheadBounds = this.scrollBounds.resize({
-                width: this.scrollBounds.width * 2,
-                height: this.scrollBounds.height * 2
-            });
+            var lookaheadBounds = this.scrollBounds;
 
+            ////.resize({
+            ////        width: this.scrollBounds.width * 2,
+            ////        height: this.scrollBounds.height * 2
+            ////    });
             var visibleBlockWidth = 0;
             var visibleBlockHeight = 0;
             var isTopLeftCell = true;

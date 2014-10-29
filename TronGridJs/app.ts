@@ -10,8 +10,15 @@ class MainViewModel {
     timer: any;
 
     lastUpdated = ko.observable('');
+
     changeData() {
-        setInterval(() => {
+        if (!!this.timer) {
+            window.clearInterval(this.timer);
+            this.timer = null;
+            return;
+        }
+
+        this.timer = setInterval(() => {
             var d = new Date();
             this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
             this.options.dataProvider.dataChanged();
@@ -22,6 +29,8 @@ class MainViewModel {
 class SampleDataProvider implements TronGrid.IDataProvider {
     rowCount = 1000;
     columnCount = 1000;
+
+
     cellData(r, c) {
         var d = new Date();
         return '[' + r + ',' + c + '] ' + d.getMinutes() + ':' + d.getSeconds();
