@@ -1,13 +1,15 @@
 ﻿/// <reference path="trongrid.ts" />
 var MainViewModel = (function () {
     function MainViewModel() {
+        this.log = ko.observableArray([]);
+        this.lastUpdated = ko.observable('');
         this.options = {
             dataProvider: new SampleDataProvider(),
             ////dataPresenter: new TronGrid.KnockoutTemplatePresenter('SampleCellTemplate'),
             rowsPerBlock: 10,
-            columnsPerBlock: 3
+            columnsPerBlock: 3,
+            behaviors: [new TronGrid.TouchScrollBehavior(this.log)]
         };
-        this.lastUpdated = ko.observable('');
     }
     MainViewModel.prototype.changeData = function () {
         var _this = this;
@@ -29,7 +31,7 @@ var MainViewModel = (function () {
 var SampleDataProvider = (function () {
     function SampleDataProvider() {
         this.rowCount = 1000;
-        this.columnCount = 1000;
+        this.columnCount = 100;
     }
     SampleDataProvider.prototype.cellData = function (r, c) {
         var d = new Date();

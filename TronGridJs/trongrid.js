@@ -6,7 +6,7 @@ var TronGrid;
     _TronGrid.enqueue = !!window.setImmediate ? function (f) {
         window.setImmediate(f);
     } : function (f) {
-        window.setTimeout(f, 1000 / 60);
+        window.setTimeout(f, 1000 / 30);
     };
 
     function padLeft(n, w) {
@@ -116,8 +116,10 @@ var TronGrid;
             var b = document.createElement('div');
             b.setAttribute('id', this.blockId);
             b.setAttribute('class', 'block');
-            b.style.width = this.bounds.width + 'px';
-            b.style.height = this.bounds.height + 'px';
+
+            ////b.style.width = this.bounds.width + 'px';
+            ////b.style.height = this.bounds.height + 'px';
+            this.bounds.apply(b);
             return b;
         };
 
@@ -250,8 +252,8 @@ var TronGrid;
         Rectangle.prototype.apply = function (element) {
             element.style.top = this.top + 'px';
             element.style.left = this.left + 'px';
-            element.style.bottom = this.bottom + 'px';
-            element.style.right = this.right + 'px';
+            element.style.width = this.width + 'px';
+            element.style.height = this.height + 'px';
         };
 
         Rectangle.prototype.toString = function () {
@@ -314,7 +316,6 @@ var TronGrid;
             this.blockContainerLeft = 0;
             this.blockContainerTop = 0;
             this.blocks = [];
-            this.visibleBlocks = [];
             this.registerEventHandlers();
         }
         TronGrid.prototype.update = function (o) {
@@ -322,10 +323,22 @@ var TronGrid;
             this.provider = this.options.dataProvider;
             this.presenter = this.options.dataPresenter;
             this.provider.dataChanged = this.dataChanged.bind(this);
-            this.content = document.createElement('div');
-            this.scroller.appendChild(this.content);
+            this.scroller.className = 'tron-grid';
+
+            ////this.content = document.createElement('div');
+            ////this.content.className = 'tron-grid-viewport';
+            ////this.scroller.appendChild(this.content);
             this.blockContainer = document.createElement('div');
-            this.content.appendChild(this.blockContainer);
+            this.blockContainer.className = 'tron-grid-container';
+            this.scroller.appendChild(this.blockContainer);
+            this.content = this.blockContainer;
+
+            if (!!this.options.behaviors) {
+                for (var b = 0; b < this.options.behaviors.length; b++) {
+                    this.options.behaviors[b].attach(this);
+                }
+            }
+
             this.updateScrollBounds();
             this.dataChanged();
         };
@@ -543,12 +556,12 @@ var TronGrid;
                     if (renderedRow && isTopLeftCell) {
                         if (this.blockContainerLeft !== block.bounds.left) {
                             this.blockContainerLeft = block.bounds.left;
-                            this.content.style.paddingLeft = block.bounds.left + 'px';
+                            //this.content.style.paddingLeft = block.bounds.left + 'px';
                         }
 
                         if (this.blockContainerTop !== block.bounds.top) {
                             this.blockContainerTop = block.bounds.top;
-                            this.content.style.paddingTop = block.bounds.top + 'px';
+                            //this.content.style.paddingTop = block.bounds.top + 'px';
                         }
 
                         isTopLeftCell = false;
@@ -575,16 +588,14 @@ var TronGrid;
                     this.blocks[i].hide();
                 }
             }
-
-            if (this.blockContainerWidth !== visibleBlockWidth) {
-                this.blockContainerWidth = visibleBlockWidth;
-                this.blockContainer.style.width = visibleBlockWidth + 'px';
-            }
-
-            if (this.blockContainerHeight !== visibleBlockHeight) {
-                this.blockContainerHeight = visibleBlockHeight;
-                this.blockContainer.style.height = visibleBlockHeight + 'px';
-            }
+            ////if (this.blockContainerWidth !== visibleBlockWidth) {
+            ////    this.blockContainerWidth = visibleBlockWidth;
+            ////    this.blockContainer.style.width = visibleBlockWidth + 'px';
+            ////}
+            ////if (this.blockContainerHeight !== visibleBlockHeight) {
+            ////    this.blockContainerHeight = visibleBlockHeight;
+            ////    this.blockContainer.style.height = visibleBlockHeight + 'px';
+            ////}
         };
 
         TronGrid.prototype.renderBlock = function (block, bounds) {
@@ -668,17 +679,88 @@ var TronGrid;
         return TronGrid;
     })();
     _TronGrid.TronGrid = TronGrid;
-})(TronGrid || (TronGrid = {}));
 
-ko.bindingHandlers.tronGrid = {
-    init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-        var grid = new TronGrid.TronGrid(element);
-        ko.utils.domData.set(element, 'trongrid', grid);
-    },
-    update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-        var o = ko.unwrap(valueAccessor());
-        var grid = ko.utils.domData.get(element, 'trongrid');
-        grid.update(o);
-    }
-};
+    var TouchScrollBehavior = (function () {
+        function TouchScrollBehavior(log) {
+            this.log = log;
+            /** Measured in pixels per frame (or 1/30th of a second) */
+            this.scrollDeltaX = 0;
+            /** Measured in pixels per frame (or 1/30th of a second) */
+            this.scrollDeltaY = 0;
+            /** Interval subscription */
+            this.scrollPrediction = null;
+            this.scrollTimestamp = 0;
+            this.lastTouchX = 0;
+            this.lastTouchY = 0;
+        }
+        TouchScrollBehavior.prototype.attach = function (attachToGrid) {
+            if (!!this.grid) {
+                throw "This behavior has already been attached to a grid";
+            }
+
+            this.grid = attachToGrid;
+            ko.utils.registerEventHandler(this.grid.scroller, 'touchmove', this.touchMove.bind(this));
+            ko.utils.registerEventHandler(this.grid.scroller, 'touchend', this.touchEnd.bind(this));
+            ko.utils.registerEventHandler(this.grid.scroller, 'touchleave', this.touchEnd.bind(this));
+            ko.utils.registerEventHandler(this.grid.scroller, 'scroll', this.stopScrollPrediction.bind(this));
+
+            // This is the magic, this gives me "live" scroll events
+            ko.utils.registerEventHandler(this.grid.scroller, 'gesturechange', function () {
+            });
+        };
+
+        TouchScrollBehavior.prototype.touchMove = function () {
+            var e = event;
+            if (!e.touches || !e.touches.length) {
+                return;
+            }
+
+            var touchItem = e.touches[0];
+            var deltaTime = 1;
+            var t = e.timeStamp;
+            if (this.scrollTimestamp !== 0) {
+                deltaTime = t - this.scrollTimestamp;
+                this.scrollDeltaX = ((touchItem.pageX - this.lastTouchX) * (deltaTime / (1000 / 30))) | 0;
+                this.scrollDeltaY = ((touchItem.pageY - this.lastTouchY) * (deltaTime / (1000 / 30))) | 0;
+                this.lastTouchX = touchItem.pageX | 0;
+                this.lastTouchY = touchItem.pageY | 0;
+                this.scrollTimestamp = t;
+            } else {
+                this.lastTouchX = touchItem.pageX | 0;
+                this.lastTouchY = touchItem.pageY | 0;
+                this.scrollTimestamp = t;
+            }
+        };
+
+        TouchScrollBehavior.prototype.touchEnd = function () {
+            this.startScrollPrediction();
+        };
+
+        TouchScrollBehavior.prototype.stopScrollPrediction = function () {
+            if (this.scrollPrediction !== null) {
+                clearInterval(this.scrollPrediction);
+                this.scrollPrediction = null;
+            }
+        };
+
+        TouchScrollBehavior.prototype.startScrollPrediction = function () {
+            var _this = this;
+            this.stopScrollPrediction();
+            if (this.scrollDeltaX !== 0 && this.scrollDeltaY !== 0) {
+                return;
+            }
+
+            this.scrollPrediction = setInterval(function () {
+                var b = _this.grid.scrollBounds;
+                var newBounds = new Rectangle(_this.scrollDeltaX > 0 ? b.left : Math.max(0, b.left - _this.scrollDeltaX), _this.scrollDeltaY > 0 ? b.top : Math.max(0, b.top - _this.scrollDeltaY), _this.scrollDeltaX > 0 ? b.width + _this.scrollDeltaX : b.width, _this.scrollDeltaY > 0 ? b.height + _this.scrollDeltaY : b.height);
+                _this.log.push('Expanded from ' + _this.grid.scrollBounds.toString() + ' to ' + newBounds.toString());
+
+                _this.grid.scrollBounds = newBounds;
+                _this.grid.enqueueRender();
+            }, 1000 / 30);
+        };
+        return TouchScrollBehavior;
+    })();
+    _TronGrid.TouchScrollBehavior = TouchScrollBehavior;
+})(TronGrid || (TronGrid = {}));
 //# sourceMappingURL=trongrid.js.map

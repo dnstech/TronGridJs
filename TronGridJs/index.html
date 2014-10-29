@@ -7,14 +7,18 @@
         <script src="jquery/jquery.js"></script>
         <script src="knockout/knockout.debug.js"></script>
         <script src="trongrid.js"></script>
+        <script src="ko-trongrid.js"></script>
     </head>
     <body>
         <script id="SampleCellTemplate" type="text/html">
             <span data-bind="text: $data" style="color: green"></span>
         </script>
         <h1>TronGrid Sample</h1>
-        <div id="scroller" class="tron-grid" data-bind="tronGrid: options"></div>
+        <div id="scroller" data-bind="tronGrid: options"></div>
         <button data-bind="click: changeData">Trigger Data Change</button>
+        <ol data-bind="foreach:log">
+            <li data-bind="text: $data"></li>
+        </ol>
         <pre data-bind="text: lastUpdated"></pre>
         <script src="app.js"></script>
     </body>

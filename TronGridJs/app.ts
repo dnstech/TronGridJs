@@ -1,16 +1,18 @@
 ﻿/// <reference path="trongrid.ts" />
 
 class MainViewModel {
+    log = ko.observableArray([]);
+    timer: any;
+    lastUpdated = ko.observable('');
+
+
     options: TronGrid.IOptions = {
         dataProvider: new SampleDataProvider(),
         ////dataPresenter: new TronGrid.KnockoutTemplatePresenter('SampleCellTemplate'),
         rowsPerBlock: 10,
-        columnsPerBlock: 3
+        columnsPerBlock: 3,
+        behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
     }
-
-    timer: any;
-
-    lastUpdated = ko.observable('');
 
     changeData() {
         if (!!this.timer) {
@@ -29,8 +31,7 @@ class MainViewModel {
 
 class SampleDataProvider implements TronGrid.IDataProvider {
     rowCount = 1000;
-    columnCount = 1000;
-
+    columnCount = 100;
 
     cellData(r, c) {
         var d = new Date();
