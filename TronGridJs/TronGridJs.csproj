@@ -38,6 +38,7 @@
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
     <TypeScriptCompile Include="ko-trongrid.ts" />
+    <TypeScriptCompile Include="touchscroll-trongrid.ts" />
     <TypeScriptCompile Include="trongrid.ts" />
     <TypeScriptCompile Include="types\jquery.d.ts" />
     <TypeScriptCompile Include="types\knockout.d.ts" />

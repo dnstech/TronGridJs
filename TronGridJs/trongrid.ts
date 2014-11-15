@@ -1,16 +1,29 @@
 ﻿/// <reference path="types/knockout.d.ts" />
 /// <reference path="types/jquery.d.ts" />
 
-interface KnockoutBindingHandlers {
-    tronGrid: KnockoutBindingHandler;
-}
+window['requestAnimFrame'] = (function () {
+    return window.requestAnimationFrame ||
+        (<any>window).webkitRequestAnimationFrame ||
+        (<any>window).mozRequestAnimationFrame ||
+        (<any>window).oRequestAnimationFrame ||
+        (<any>window).msRequestAnimationFrame ||
+        function (callback) {
+            window.setTimeout(callback, 1000 / 60);
+        };
+})();
 
 module TronGrid {
     export var enqueue: { (action: () => void): void; } = !!<any>window.setImmediate ? function (f) {
-            window.setImmediate(f);
-        } : function (f) {
+        window.setImmediate(f);
+    } : function (f) {
             window.setTimeout(f, 1000 / 30);
         };
+
+    export interface IObservable<T> {
+        subscribe(observer: (change: T) => void): {
+            dispose(): void;
+        };
+    }
 
     export interface ISize {
         /** Width in Pixels */
@@ -19,18 +32,24 @@ module TronGrid {
         height: number;
     }
 
+    export interface IDataChanged {
+        row?: number;
+        column?: number;
+        sizeChanged?: boolean;
+    }
+
     export interface IDataProvider {
         rowHeight: (index) => number;
         columnWidth: (index) => number;
         cellData: (row: number, column: number) => any;
         columnCount: number;
         rowCount: number;
-        dataChanged?: (row?: number, column?: number) => void;
+        dataChanged?: IObservable<IDataChanged>;
     }
 
     export interface IDataPresenter {
         createCell?: (row?: number, column?: number) => HTMLElement;
-        renderCell: (cell: HTMLElement, data: any, row: number, column: number, size:ISize) => void;
+        renderCell: (cell: HTMLElement, data: any, row: number, column: number, size: ISize) => void;
     }
 
     export interface IGridBehavior {
@@ -164,9 +183,7 @@ module TronGrid {
         createBlockElement() {
             var b = document.createElement('div');
             b.setAttribute('id', this.blockId);
-            b.setAttribute('class', 'block');
-            ////b.style.width = this.bounds.width + 'px';
-            ////b.style.height = this.bounds.height + 'px';
+            b.className = 'block';
             this.bounds.apply(b);
             return b;
         }
@@ -174,7 +191,7 @@ module TronGrid {
         createCellElement(r: number, c: number) {
             var cell = !!this.grid.presenter.createCell ? this.grid.presenter.createCell(r, c) : document.createElement('div');
             cell.setAttribute('id', 'tgc_' + r + '_' + c);
-            cell.setAttribute('class', 'cell');
+            cell.className += ' cell';
             return cell;
         }
 
@@ -192,13 +209,16 @@ module TronGrid {
 
         renderBlock(block: HTMLDivElement) {
             if (block.childElementCount !== this.cellCount) {
+                var fragment = document.createDocumentFragment();
                 for (var r = this.firstRow; r < this.lastRow; r++) {
                     for (var c = this.firstColumn; c < this.lastColumn; c++) {
                         var cell = this.createCellElement(r, c);
                         this.renderCell(r, c, cell);
-                        this.block.appendChild(cell);
+                        fragment.appendChild(cell);
                     }
                 }
+
+                this.block.appendChild(fragment);
             } else {
                 // Recycle cells
                 var cellIndex = 0;
@@ -212,15 +232,38 @@ module TronGrid {
             }
         }
 
+
+        currentLeft = 0;
+        currentTop = 0;
+
         renderCell(r: number, c: number, cell: HTMLElement) {
             var size = {
                 width: this.grid.columnWidths[c],
                 height: this.grid.rowHeights[r]
             };
+
             var cellData = this.grid.provider.cellData(r, c);
             if (!this.isMeasured) {
-                cell.style.width = size.width + 'px';
+                if (c === this.firstColumn) {
+                    this.currentLeft = 0;
+                }
+
+                if (r === this.firstRow) {
+                    this.currentTop = 0;
+                }
+
+                cell.style.left = this.currentLeft + 'px';
+                cell.style.top = this.currentTop + 'px';
+                // HACK: Fudged width by 0.5 because of rendering bug in Chrome to do with either anti-aliasing or measurement rounding.
+                cell.style.width = (size.width + 0.5) + 'px';
                 cell.style.height = size.height + 'px';
+
+                if (c === this.lastColumn - 1) {
+                    this.currentLeft = 0;
+                    this.currentTop += size.height;
+                } else {
+                    this.currentLeft += size.width;
+                }
             }
 
             this.grid.presenter.renderCell(cell, cellData, r, c, size);
@@ -233,6 +276,13 @@ module TronGrid {
 
         constructor(public left: number, public top: number, public width: number = 0, public height: number = 0) {
             this.recalculate();
+        }
+
+        private prefix(style, prop, value) {
+            var prefs = ['webkit', 'Moz', 'o', 'ms'];
+            for (var pref in prefs) {
+                style[prefs[pref] + prop] = value;
+            }
         }
 
         compareX(x: number) {
@@ -255,7 +305,7 @@ module TronGrid {
 
         /** Compares this rectangle to the point specified */
         compareToPoint(x: number, y: number) {
-            if (this.left > x) 
+            if (this.left > x)
                 return -1;
             if (this.right < x)
                 return 1;
@@ -278,9 +328,9 @@ module TronGrid {
             }
 
             return !(this.left > other.right ||
-                     this.right < other.left ||
-                     this.top > other.bottom ||
-                     this.bottom < other.top);
+                this.right < other.left ||
+                this.top > other.bottom ||
+                this.bottom < other.top);
         }
 
         isValid() {
@@ -312,6 +362,12 @@ module TronGrid {
             element.style.height = this.height + 'px';
         }
 
+        apply3dTranslate(element: HTMLElement) {
+            this.prefix(element.style, 'Transform', 'translate3d(' + this.left + 'px,' + this.top + 'px, 0)');
+            element.style.width = this.width + 'px';
+            element.style.height = this.height + 'px';
+        }
+
         toString() {
             return this.left + ',' + this.top + ',' + this.width + 'x' + this.height;
         }
@@ -325,17 +381,6 @@ module TronGrid {
     export class TextPresenter implements IDataPresenter {
         renderCell(cell: HTMLElement, data: any) {
             cell.textContent = data;
-        }
-    }
-
-    export class KnockoutTemplatePresenter implements IDataPresenter {
-        constructor(template: string);
-        constructor(template: (data:any) => string);
-        constructor(public template: any) {
-        }
-
-        renderCell(cell: HTMLElement, data: any) {
-            ko.renderTemplate(this.template, data, undefined, cell);
         }
     }
 
@@ -372,7 +417,7 @@ module TronGrid {
         blockContainerLeft = 0;
         blockContainerTop = 0;
         scrollBounds: Rectangle;
-
+        scrollerSize: ISize = { width: 0, height: 0 };
         private blocks: CellBlock[] = [];
 
         constructor(public scroller: HTMLElement) {
@@ -383,7 +428,7 @@ module TronGrid {
             this.options = $.extend({}, this.defaultOptions, o);
             this.provider = this.options.dataProvider;
             this.presenter = this.options.dataPresenter;
-            this.provider.dataChanged = this.dataChanged.bind(this);
+            this.subscribeData();
             this.scroller.className += ' tron-grid';
 
             ////this.content = document.createElement('div');
@@ -405,6 +450,21 @@ module TronGrid {
             this.dataChanged();
         }
 
+        // AC: Experiment using requestAnimationFrame to ensure scroll changes are only raised once per frame.
+        ////ticking = false;
+        ////updateScrollAndRender() {
+        ////    this.ticking = false;
+        ////    this.updateScrollBounds();
+        ////    this.enqueueRender();
+        ////}
+
+        ////scrollChanged() {
+        ////    if (!this.ticking) {
+        ////        this.ticking = true;
+        ////        (<any>window).requestAnimFrame(this.updateScrollAndRender.bind(this));
+        ////    }
+        ////}
+
         scrollChanged() {
             this.updateScrollBounds();
             this.enqueueRender();
@@ -417,7 +477,7 @@ module TronGrid {
 
             this.measureQueued = true;
             this.renderQueued = true;
-            enqueue(() => {
+            (<any>window).requestAnimFrame(() => {
                 this.measureQueued = false;
                 this.renderQueued = false;
                 this.measure();
@@ -432,18 +492,25 @@ module TronGrid {
 
             this.renderQueued = true;
 
-            enqueue(() => {
+            (<any>window).requestAnimFrame(() => {
                 this.renderQueued = false;
                 this.render();
             });
         }
 
         updateScrollBounds() {
+            if (this.scrollerSize.width === 0 || this.scrollerSize.height === 0) {
+                this.scrollerSize = {
+                    width: this.scroller.clientWidth,
+                    height: this.scroller.clientHeight
+                };
+            }
+
             this.scrollBounds = new Rectangle(
                 this.scroller.scrollLeft,
                 this.scroller.scrollTop,
-                this.scroller.clientWidth,
-                this.scroller.clientHeight);
+                this.scrollerSize.width,
+                this.scrollerSize.height);
         }
 
         measureColumns() {
@@ -552,7 +619,7 @@ module TronGrid {
                     b.invalidate(true);
                     blockIndex++;
                 }
-            }          
+            }
         }
 
         getTopMostVisibleBlockIndex(bounds: Rectangle) {
@@ -604,9 +671,9 @@ module TronGrid {
             }
 
             var lookaheadBounds = this.scrollBounds.resize({
-                    width: this.scrollBounds.width * 2,
-                    height: this.scrollBounds.height * 2
-                });
+                width: this.scrollBounds.width * 2,
+                height: this.scrollBounds.height * 2
+            });
 
             var leftBlockIndex = this.getLeftMostVisibleBlockIndex(lookaheadBounds);
             var topBlockIndex = this.getTopMostVisibleBlockIndex(lookaheadBounds);
@@ -727,11 +794,8 @@ module TronGrid {
         }
 
         subscribeData() {
-            var d = this.options.dataProvider;
-            d.dataChanged = this.dataChanged;
-            ////if (ko.isObservable(d)) {
-            ////    this.dataSubscription = (<KnockoutObservable<any>>d).subscribe(() => this.dataChanged());
-            ////}
+            this.disposeData();
+            this.dataSubscription = this.provider.dataChanged.subscribe(d => this.dataChanged(d.row, d.column, d.sizeChanged));
         }
 
         disposeData() {
@@ -749,95 +813,11 @@ module TronGrid {
         }
 
         sizeChanged() {
+            this.scrollerSize = {
+                width: this.scroller.clientWidth,
+                height: this.scroller.clientHeight
+            };
             this.scrollChanged();
-        }
-    }
-
-    export class TouchScrollBehavior implements IGridBehavior {
-        private grid: TronGrid;
-
-        constructor(private log: KnockoutObservableArray<string>) {
-
-        }
-        /** Measured in pixels per frame (or 1/30th of a second) */
-        scrollDeltaX = 0;
-
-        /** Measured in pixels per frame (or 1/30th of a second) */
-        scrollDeltaY = 0;
-
-        /** Interval subscription */
-        scrollPrediction: number = null;
-        scrollTimestamp = 0;
-        lastTouchX = 0;
-        lastTouchY = 0;
-
-        attach(attachToGrid: TronGrid) {
-            if (!!this.grid) {
-                throw "This behavior has already been attached to a grid";
-            }
-
-            this.grid = attachToGrid;
-            ko.utils.registerEventHandler(this.grid.scroller, 'touchmove', this.touchMove.bind(this));
-            ko.utils.registerEventHandler(this.grid.scroller, 'touchend', this.touchEnd.bind(this));
-            ko.utils.registerEventHandler(this.grid.scroller, 'touchleave', this.touchEnd.bind(this));
-            ko.utils.registerEventHandler(this.grid.scroller, 'scroll', this.stopScrollPrediction.bind(this));
-
-            // This is the magic, this gives me "live" scroll events
-            ko.utils.registerEventHandler(this.grid.scroller, 'gesturechange', function () { });
-        }
-
-        touchMove() {
-            var e = <any>event;
-            if (!e.touches || !e.touches.length) {
-                return;
-            }
-
-            var touchItem = e.touches[0];
-            var deltaTime = 1;
-            var t = e.timeStamp;
-            if (this.scrollTimestamp !== 0) {
-                deltaTime = t - this.scrollTimestamp;
-                this.scrollDeltaX = ((touchItem.pageX - this.lastTouchX) * (deltaTime / (1000 / 30))) | 0;
-                this.scrollDeltaY = ((touchItem.pageY - this.lastTouchY) * (deltaTime / (1000 / 30))) | 0;
-                this.lastTouchX = touchItem.pageX | 0;
-                this.lastTouchY = touchItem.pageY | 0;
-                this.scrollTimestamp = t;
-            } else {
-                this.lastTouchX = touchItem.pageX | 0;
-                this.lastTouchY = touchItem.pageY | 0;
-                this.scrollTimestamp = t;
-            }
-        }
-
-        touchEnd() {
-            this.startScrollPrediction();
-        }
-
-        stopScrollPrediction() {
-            if (this.scrollPrediction !== null) {
-                clearInterval(this.scrollPrediction);
-                this.scrollPrediction = null;
-            }
-        }
-
-        startScrollPrediction() {
-            this.stopScrollPrediction();
-            if (this.scrollDeltaX !== 0 && this.scrollDeltaY !== 0) {
-                return;
-            }
-
-            this.scrollPrediction = setInterval(() => {
-                var b = this.grid.scrollBounds;
-                var newBounds = new Rectangle(
-                    this.scrollDeltaX > 0 ? b.left : Math.max(0, b.left - this.scrollDeltaX),
-                    this.scrollDeltaY > 0 ? b.top : Math.max(0, b.top - this.scrollDeltaY),
-                    this.scrollDeltaX > 0 ? b.width + this.scrollDeltaX : b.width,
-                    this.scrollDeltaY > 0 ? b.height + this.scrollDeltaY : b.height);
-                this.log.push('Expanded from ' + this.grid.scrollBounds.toString() + ' to ' + newBounds.toString());
-
-                this.grid.scrollBounds = newBounds;
-                this.grid.enqueueRender();
-            }, 1000 / 30);
         }
     }
 }

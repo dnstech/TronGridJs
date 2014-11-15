@@ -5,7 +5,7 @@ class MainViewModel {
     timer: any;
     lastUpdated = ko.observable('');
 
-    options: TronGrid.IOptions = {
+    options = {
         dataProvider: new SampleChartDataProvider(),
         dataPresenter: new SampleCanvasPresenter(),
         rowsPerBlock: 1,
@@ -23,7 +23,7 @@ class MainViewModel {
         this.timer = setInterval(() => {
             var d = new Date();
             this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
-            this.options.dataProvider.dataChanged();
+            this.options.dataProvider.dataChanged({ });
         }, 500);
     }
 }
@@ -45,7 +45,7 @@ class SampleChartDataProvider implements TronGrid.IDataProvider {
         return d.getMilliseconds();
     }
 
-    dataChanged: () => void;
+    dataChanged = ko.observable<TronGrid.IDataChanged>();
 }
 
 class SampleCanvasPresenter implements TronGrid.IDataPresenter {
@@ -69,6 +69,7 @@ class SampleCanvasPresenter implements TronGrid.IDataPresenter {
         context.font = '18pt Calibri';
         context.fillStyle = 'white';
         context.textAlign = 'center';
+        context.fillText('R: ' + row + ' C: ' + column, cell.width / 2, cell.height - 50, cell.width - 10);
         context.fillText('T: ' + data, cell.width / 2, cell.height - 30, cell.width - 10);
     }
 }
@@ -90,7 +91,7 @@ class SampleDataProvider implements TronGrid.IDataProvider {
         return 100;
     }
 
-    dataChanged: () => void;
+    dataChanged = ko.observable<TronGrid.IDataChanged>(null);
 }
 
 ko.applyBindings(new MainViewModel());

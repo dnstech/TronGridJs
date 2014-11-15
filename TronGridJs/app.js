@@ -21,7 +21,7 @@ var MainViewModel = (function () {
         this.timer = setInterval(function () {
             var d = new Date();
             _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
-            _this.options.dataProvider.dataChanged();
+            _this.options.dataProvider.dataChanged({});
         }, 500);
     };
     return MainViewModel;
@@ -31,6 +31,7 @@ var SampleChartDataProvider = (function () {
     function SampleChartDataProvider() {
         this.rowCount = 100;
         this.columnCount = 10000;
+        this.dataChanged = ko.observable();
     }
     SampleChartDataProvider.prototype.rowHeight = function (r) {
         return 200;
@@ -70,6 +71,7 @@ var SampleCanvasPresenter = (function () {
         context.font = '18pt Calibri';
         context.fillStyle = 'white';
         context.textAlign = 'center';
+        context.fillText('R: ' + row + ' C: ' + column, cell.width / 2, cell.height - 50, cell.width - 10);
         context.fillText('T: ' + data, cell.width / 2, cell.height - 30, cell.width - 10);
     };
     return SampleCanvasPresenter;
@@ -79,6 +81,7 @@ var SampleDataProvider = (function () {
     function SampleDataProvider() {
         this.rowCount = 1000;
         this.columnCount = 100;
+        this.dataChanged = ko.observable(null);
     }
     SampleDataProvider.prototype.cellData = function (r, c) {
         var d = new Date();

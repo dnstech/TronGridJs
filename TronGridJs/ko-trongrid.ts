@@ -1,5 +1,9 @@
 ﻿/// <reference path="trongrid.ts" />
 
+interface KnockoutBindingHandlers {
+    tronGrid: KnockoutBindingHandler;
+}
+
 ko.bindingHandlers.tronGrid = {
     init: function (element: HTMLElement, valueAccessor: () => any, allBindingsAccessor: KnockoutAllBindingsAccessor, viewModel: any, bindingContext: KnockoutBindingContext) {
         var grid = new TronGrid.TronGrid(element);
@@ -12,3 +16,15 @@ ko.bindingHandlers.tronGrid = {
     }
 };
 
+module TronGrid {
+    export class KnockoutTemplatePresenter implements TronGrid.IDataPresenter {
+        constructor(template: string);
+        constructor(template: (data: any) => string);
+        constructor(public template: any) {
+        }
+
+        renderCell(cell: HTMLElement, data: any) {
+            ko.renderTemplate(this.template, data, undefined, cell);
+        }
+    }
+}
