@@ -1,16 +1,23 @@
 ﻿/// <reference path="trongrid.ts" />
+/// <reference path="ko-trongrid.ts" />
 var MainViewModel = (function () {
     function MainViewModel() {
         this.log = ko.observableArray([]);
         this.lastUpdated = ko.observable('');
-        this.options = {
+        this.textOptions = {
+            dataProvider: new SampleDataProvider(),
+            dataPresenter: new TronGrid.TextPresenter(),
+            rowsPerBlock: 10,
+            columnsPerBlock: 20
+        };
+        this.canvasOptions = {
             dataProvider: new SampleChartDataProvider(),
             dataPresenter: new SampleCanvasPresenter(),
-            rowsPerBlock: 1,
+            rowsPerBlock: 2,
             columnsPerBlock: 5
         };
     }
-    MainViewModel.prototype.changeData = function () {
+    MainViewModel.prototype.changeTextData = function () {
         var _this = this;
         if (!!this.timer) {
             window.clearInterval(this.timer);
@@ -21,7 +28,22 @@ var MainViewModel = (function () {
         this.timer = setInterval(function () {
             var d = new Date();
             _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
-            _this.options.dataProvider.dataChanged({});
+            _this.textOptions.dataProvider.dataChanged({});
+        }, 500);
+    };
+
+    MainViewModel.prototype.changeCanvasData = function () {
+        var _this = this;
+        if (!!this.timer) {
+            window.clearInterval(this.timer);
+            this.timer = null;
+            return;
+        }
+
+        this.timer = setInterval(function () {
+            var d = new Date();
+            _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
+            _this.canvasOptions.dataProvider.dataChanged({});
         }, 500);
     };
     return MainViewModel;
@@ -50,19 +72,36 @@ var SampleChartDataProvider = (function () {
 
 var SampleCanvasPresenter = (function () {
     function SampleCanvasPresenter() {
+        this.pixelRatio = (function () {
+            var ctx = document.createElement("canvas").getContext("2d"), dpr = window.devicePixelRatio || 1, bsr = ctx.webkitBackingStorePixelRatio || ctx.mozBackingStorePixelRatio || ctx.msBackingStorePixelRatio || ctx.oBackingStorePixelRatio || ctx.backingStorePixelRatio || 1;
+
+            return dpr / bsr;
+        })();
     }
-    SampleCanvasPresenter.prototype.createCell = function (row, column) {
-        return document.createElement('canvas');
+    SampleCanvasPresenter.prototype.createHiDPICanvas = function (w, h, ratio) {
+        if (!ratio) {
+            ratio = this.pixelRatio;
+        }
+
+        var can = document.createElement("canvas");
+        can.width = w * ratio;
+        can.height = h * ratio;
+        can.style.width = w + "px";
+        can.style.height = h + "px";
+        can.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+        return can;
+    };
+
+    SampleCanvasPresenter.prototype.createCell = function (row, column, size) {
+        return this.createHiDPICanvas(size.width, size.height);
     };
 
     SampleCanvasPresenter.prototype.renderCell = function (cell, data, row, column, size) {
-        cell.width = size.width;
-        cell.height = size.height;
         var context = cell.getContext("2d");
         var h = (data / 5);
-        context.clearRect(0, 0, cell.width, cell.height);
+        context.clearRect(0, 0, size.width, size.height);
         context.beginPath();
-        context.rect(5, cell.height - h, cell.width - 10, h);
+        context.rect(5, size.height - h, size.width - 10, h);
         context.fillStyle = '#ccc';
         context.fill();
         context.lineWidth = 1;
@@ -71,8 +110,8 @@ var SampleCanvasPresenter = (function () {
         context.font = '18pt Calibri';
         context.fillStyle = 'white';
         context.textAlign = 'center';
-        context.fillText('R: ' + row + ' C: ' + column, cell.width / 2, cell.height - 50, cell.width - 10);
-        context.fillText('T: ' + data, cell.width / 2, cell.height - 30, cell.width - 10);
+        context.fillText('R: ' + row + ' C: ' + column, size.width / 2, size.height - 50, size.width - 10);
+        context.fillText('T: ' + data, size.width / 2, size.height - 30, size.width - 10);
     };
     return SampleCanvasPresenter;
 })();

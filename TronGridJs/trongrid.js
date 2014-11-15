@@ -128,7 +128,18 @@ var TronGrid;
         };
 
         CellBlock.prototype.createCellElement = function (r, c) {
-            var cell = !!this.grid.presenter.createCell ? this.grid.presenter.createCell(r, c) : document.createElement('div');
+            var cell;
+            if (!!this.grid.presenter.createCell) {
+                var size = {
+                    width: this.grid.columnWidths[c],
+                    height: this.grid.rowHeights[r]
+                };
+
+                cell = this.grid.presenter.createCell(r, c, size);
+            } else {
+                cell = document.createElement('div');
+            }
+
             cell.setAttribute('id', 'tgc_' + r + '_' + c);
             cell.className += ' cell';
             return cell;

@@ -1,11 +1,12 @@
 ﻿/// <reference path="trongrid.ts" />
+/// <reference path="ko-trongrid.ts" />
 
 class MainViewModel {
     log = ko.observableArray([]);
     timer: any;
     lastUpdated = ko.observable('');
 
-    textOptions: TronGrid.IOptions = {
+    textOptions = {
         dataProvider: new SampleDataProvider(),
         dataPresenter: new TronGrid.TextPresenter(),
         rowsPerBlock: 10,
@@ -13,11 +14,11 @@ class MainViewModel {
         //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
     }
 
-    canvasOptions: TronGrid.IOptions = {
+    canvasOptions = {
         dataProvider: new SampleChartDataProvider(),
         dataPresenter: new SampleCanvasPresenter(),
         rowsPerBlock: 2,
-        columnsPerBlock: 10
+        columnsPerBlock: 5
         //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
     }
 
@@ -71,18 +72,43 @@ class SampleChartDataProvider implements TronGrid.IDataProvider {
 }
 
 class SampleCanvasPresenter implements TronGrid.IDataPresenter {
-    createCell(row?: number, column?: number) {
-        return document.createElement('canvas');
+    pixelRatio = (function () {
+        var ctx = document.createElement("canvas").getContext("2d"),
+            dpr = window.devicePixelRatio || 1,
+            bsr = (<any>ctx).webkitBackingStorePixelRatio ||
+            (<any>ctx).mozBackingStorePixelRatio ||
+            (<any>ctx).msBackingStorePixelRatio ||
+            (<any>ctx).oBackingStorePixelRatio ||
+            (<any>ctx).backingStorePixelRatio || 1;
+
+        return dpr / bsr;
+    })();
+
+
+    createHiDPICanvas(w, h, ratio?) {
+        if (!ratio) {
+            ratio = this.pixelRatio;
+        }
+
+        var can = document.createElement("canvas");
+        can.width = w * ratio;
+        can.height = h * ratio;
+        can.style.width = w + "px";
+        can.style.height = h + "px";
+        can.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+        return can;
+    }
+
+    createCell(row?: number, column?: number, size?: TronGrid.ISize) {
+        return this.createHiDPICanvas(size.width, size.height);
     }
 
     renderCell(cell: HTMLCanvasElement, data: any, row: number, column: number, size: TronGrid.ISize) {
-        cell.width = size.width;
-        cell.height = size.height;
         var context = cell.getContext("2d");
         var h = (data / 5);
-        context.clearRect(0, 0, cell.width, cell.height);
+        context.clearRect(0, 0, size.width, size.height);
         context.beginPath();
-        context.rect(5, cell.height - h, cell.width - 10, h);
+        context.rect(5, size.height - h, size.width - 10, h);
         context.fillStyle = '#ccc';
         context.fill();
         context.lineWidth = 1;
@@ -91,8 +117,8 @@ class SampleCanvasPresenter implements TronGrid.IDataPresenter {
         context.font = '18pt Calibri';
         context.fillStyle = 'white';
         context.textAlign = 'center';
-        context.fillText('R: ' + row + ' C: ' + column, cell.width / 2, cell.height - 50, cell.width - 10);
-        context.fillText('T: ' + data, cell.width / 2, cell.height - 30, cell.width - 10);
+        context.fillText('R: ' + row + ' C: ' + column, size.width / 2, size.height - 50, size.width - 10);
+        context.fillText('T: ' + data, size.width / 2, size.height - 30, size.width - 10);
     }
 }
 

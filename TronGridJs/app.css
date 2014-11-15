@@ -28,10 +28,12 @@ body {
     overflow:hidden;
     color:white;
     position:absolute;
+    white-space:nowrap;
 }
 
 .tron-grid .block {
     outline: 2px solid red;
     overflow:hidden;
     position:absolute;
+    white-space:nowrap;
 }

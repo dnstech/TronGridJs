@@ -48,8 +48,8 @@ module TronGrid {
     }
 
     export interface IDataPresenter {
-        createCell?: (row?: number, column?: number) => HTMLElement;
-        renderCell: (cell: HTMLElement, data: any, row: number, column: number, size: ISize) => void;
+        createCell?: (row?: number, column?: number, size?: ISize) => HTMLElement;
+        renderCell: (cell: HTMLElement, data: any, row: number, column: number, size?: ISize) => void;
     }
 
     export interface IGridBehavior {
@@ -188,8 +188,19 @@ module TronGrid {
             return b;
         }
 
-        createCellElement(r: number, c: number) {
-            var cell = !!this.grid.presenter.createCell ? this.grid.presenter.createCell(r, c) : document.createElement('div');
+        createCellElement(r: number, c: number): HTMLElement {
+            var cell: HTMLElement;
+            if (!!this.grid.presenter.createCell) {
+                var size = {
+                    width: this.grid.columnWidths[c],
+                    height: this.grid.rowHeights[r]
+                };
+
+                cell = this.grid.presenter.createCell(r, c, size);
+            } else {
+                cell = document.createElement('div');
+            }
+
             cell.setAttribute('id', 'tgc_' + r + '_' + c);
             cell.className += ' cell';
             return cell;
@@ -241,7 +252,7 @@ module TronGrid {
                 width: this.grid.columnWidths[c],
                 height: this.grid.rowHeights[r]
             };
-            
+
             var cellData = this.grid.provider.cellData(r, c);
             if (!this.isMeasured) {
                 if (c === this.firstColumn) {
