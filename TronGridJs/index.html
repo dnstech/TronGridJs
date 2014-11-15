@@ -9,17 +9,23 @@
         <script src="trongrid.js"></script>
         <script src="ko-trongrid.js"></script>
     </head>
-    <body>
-        <script id="SampleCellTemplate" type="text/html">
-            <span data-bind="text: $data" style="color: green"></span>
-        </script>
-        <h1>TronGrid Sample</h1>
-        <div id="scroller" class="ios" data-bind="tronGrid: options"></div>
-        <button data-bind="click: changeData">Trigger Data Change</button>
-        <ol data-bind="foreach:log">
-            <li data-bind="text: $data"></li>
-        </ol>
-        <pre data-bind="text: lastUpdated"></pre>
-        <script src="app.js"></script>
-    </body>
+<body>
+    <script id="SampleCellTemplate" type="text/html">
+        <span data-bind="text: $data" style="color: green"></span>
+    </script>
+    <h1>TronGrid Samples</h1>
+    <h3>Text Cell Renderer Sample</h3>
+    <div id="textScroller" class="ios" data-bind="tronGrid: textOptions"></div>
+    <button data-bind="click: changeTextData">Start Text Changes</button>
+
+    <h3>Canvas Cell Renderer Sample</h3>
+    <div id="canvasScroller" class="ios" data-bind="tronGrid: canvasOptions"></div>
+    <button data-bind="click: changeCanvasData">Start Value Changes</button>
+
+    <ol data-bind="foreach:log">
+        <li data-bind="text: $data"></li>
+    </ol>
+    <pre data-bind="text: lastUpdated"></pre>
+    <script src="app.js"></script>
+</body>
 </html>

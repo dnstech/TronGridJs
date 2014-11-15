@@ -241,7 +241,7 @@ module TronGrid {
                 width: this.grid.columnWidths[c],
                 height: this.grid.rowHeights[r]
             };
-
+            
             var cellData = this.grid.provider.cellData(r, c);
             if (!this.isMeasured) {
                 if (c === this.firstColumn) {
