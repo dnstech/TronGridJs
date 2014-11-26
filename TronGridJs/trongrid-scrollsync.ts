@@ -48,8 +48,12 @@
             }
 
             this.handling = true;
-            this.grid.scroller.scrollLeft = this.scroller.scrollLeft();
-            this.grid.scroller.scrollTop = this.scroller.scrollTop();
+            if (this.horizontal) {
+                this.grid.scroller.scrollLeft = this.scroller.scrollLeft();
+            } else {
+                this.grid.scroller.scrollTop = this.scroller.scrollTop();
+            }
+
             this.handling = false;
         }
 
