@@ -6,15 +6,11 @@ var MainViewModel = (function () {
         this.lastUpdated = ko.observable('');
         this.textOptions = {
             dataProvider: new SampleDataProvider(),
-            dataPresenter: new TronGrid.TextPresenter(),
-            rowsPerBlock: 10,
-            columnsPerBlock: 20
+            dataPresenter: new TronGrid.TextPresenter()
         };
         this.canvasOptions = {
             dataProvider: new SampleChartDataProvider(),
-            dataPresenter: new SampleCanvasPresenter(),
-            rowsPerBlock: 2,
-            columnsPerBlock: 5
+            dataPresenter: new SampleCanvasPresenter()
         };
     }
     MainViewModel.prototype.changeTextData = function () {
@@ -30,6 +26,25 @@ var MainViewModel = (function () {
             _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
             _this.textOptions.dataProvider.dataChanged({});
         }, 500);
+    };
+
+    MainViewModel.prototype.scrollTo = function () {
+        this.textOptions.dataProvider.scrollIntoView({
+            firstColumn: 10,
+            firstRow: 10,
+            lastColumn: 20,
+            lastRow: 20
+        });
+    };
+
+    MainViewModel.prototype.scrollToAnimated = function () {
+        this.textOptions.dataProvider.scrollIntoView({
+            firstColumn: 40,
+            firstRow: 40,
+            lastColumn: 60,
+            lastRow: 60,
+            duration: 2000
+        });
     };
 
     MainViewModel.prototype.changeCanvasData = function () {
@@ -53,6 +68,8 @@ var SampleChartDataProvider = (function () {
     function SampleChartDataProvider() {
         this.rowCount = 100;
         this.columnCount = 10000;
+        this.rowsPerBlock = 2;
+        this.columnsPerBlock = 5;
         this.dataChanged = ko.observable();
     }
     SampleChartDataProvider.prototype.rowHeight = function (r) {
@@ -120,6 +137,9 @@ var SampleDataProvider = (function () {
     function SampleDataProvider() {
         this.rowCount = 1000;
         this.columnCount = 100;
+        this.rowsPerBlock = 10;
+        this.columnsPerBlock = 20;
+        this.scrollIntoView = ko.observable();
         this.dataChanged = ko.observable(null);
     }
     SampleDataProvider.prototype.cellData = function (r, c) {

@@ -9,16 +9,12 @@ class MainViewModel {
     textOptions = {
         dataProvider: new SampleDataProvider(),
         dataPresenter: new TronGrid.TextPresenter(),
-        rowsPerBlock: 10,
-        columnsPerBlock: 20
         //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
     }
 
     canvasOptions = {
         dataProvider: new SampleChartDataProvider(),
-        dataPresenter: new SampleCanvasPresenter(),
-        rowsPerBlock: 2,
-        columnsPerBlock: 5
+        dataPresenter: new SampleCanvasPresenter()
         //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
     }
 
@@ -34,6 +30,25 @@ class MainViewModel {
             this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
             this.textOptions.dataProvider.dataChanged({ });
         }, 500);
+    }
+
+    scrollTo() {
+        this.textOptions.dataProvider.scrollIntoView({
+            firstColumn: 10,
+            firstRow: 10,
+            lastColumn: 20,
+            lastRow: 20
+        });
+    }
+
+    scrollToAnimated() {
+        this.textOptions.dataProvider.scrollIntoView({
+            firstColumn: 40,
+            firstRow: 40,
+            lastColumn: 60,
+            lastRow: 60,
+            duration: 2000  // 2 seconds
+        });
     }
 
     changeCanvasData() {
@@ -54,6 +69,9 @@ class MainViewModel {
 class SampleChartDataProvider implements TronGrid.IDataProvider {
     rowCount = 100;
     columnCount = 10000;
+    rowsPerBlock = 2;
+    columnsPerBlock = 5;
+    dataChanged = ko.observable<TronGrid.IDataChanged>();
 
     rowHeight(r) {
         return 200;
@@ -67,8 +85,6 @@ class SampleChartDataProvider implements TronGrid.IDataProvider {
         var d = new Date();
         return d.getMilliseconds();
     }
-
-    dataChanged = ko.observable<TronGrid.IDataChanged>();
 }
 
 class SampleCanvasPresenter implements TronGrid.IDataPresenter {
@@ -125,6 +141,10 @@ class SampleCanvasPresenter implements TronGrid.IDataPresenter {
 class SampleDataProvider implements TronGrid.IDataProvider {
     rowCount = 1000;
     columnCount = 100;
+    rowsPerBlock = 10;
+    columnsPerBlock = 20;
+    scrollIntoView = ko.observable<TronGrid.IScrollRequest>();
+    dataChanged = ko.observable<TronGrid.IDataChanged>(null);
 
     cellData(r, c) {
         var d = new Date();
@@ -139,7 +159,6 @@ class SampleDataProvider implements TronGrid.IDataProvider {
         return 100;
     }
 
-    dataChanged = ko.observable<TronGrid.IDataChanged>(null);
 }
 
 ko.applyBindings(new MainViewModel());
