@@ -1,22 +1,32 @@
 ﻿/// <reference path="trongrid.ts" />
 /// <reference path="ko-trongrid.ts" />
+/// <reference path="trongrid-scrollsync.ts" />
 
 class MainViewModel {
     log = ko.observableArray([]);
     timer: any;
     lastUpdated = ko.observable('');
+    syncIsActive = ko.observable(false);
 
     textOptions = {
         dataProvider: new SampleDataProvider(),
         dataPresenter: new TronGrid.TextPresenter(),
         //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
-    }
+    };
 
     canvasOptions = {
         dataProvider: new SampleChartDataProvider(),
         dataPresenter: new SampleCanvasPresenter()
         //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
-    }
+    };
+
+    scrollSyncOptions = {
+        dataProvider: new SampleDataProvider(),
+        dataPresenter: new TronGrid.TextPresenter(),
+        behaviors: [
+            new TronGrid.ScrollSyncBehavior('#synchronizedScroller', '#scrollableContent', true, this.syncIsActive)
+        ]
+    };
 
     changeTextData() {
         if (!!this.timer) {

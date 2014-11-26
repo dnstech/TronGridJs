@@ -1,9 +1,11 @@
 ﻿/// <reference path="trongrid.ts" />
 /// <reference path="ko-trongrid.ts" />
+/// <reference path="trongrid-scrollsync.ts" />
 var MainViewModel = (function () {
     function MainViewModel() {
         this.log = ko.observableArray([]);
         this.lastUpdated = ko.observable('');
+        this.syncIsActive = ko.observable(false);
         this.textOptions = {
             dataProvider: new SampleDataProvider(),
             dataPresenter: new TronGrid.TextPresenter()
@@ -11,6 +13,13 @@ var MainViewModel = (function () {
         this.canvasOptions = {
             dataProvider: new SampleChartDataProvider(),
             dataPresenter: new SampleCanvasPresenter()
+        };
+        this.scrollSyncOptions = {
+            dataProvider: new SampleDataProvider(),
+            dataPresenter: new TronGrid.TextPresenter(),
+            behaviors: [
+                new TronGrid.ScrollSyncBehavior('#synchronizedScroller', '#scrollableContent', true, this.syncIsActive)
+            ]
         };
     }
     MainViewModel.prototype.changeTextData = function () {

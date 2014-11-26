@@ -8,6 +8,7 @@
         <script src="knockout/knockout.debug.js"></script>
         <script src="trongrid.js"></script>
         <script src="ko-trongrid.js"></script>
+        <script src="trongrid-scrollsync.js"></script>
     </head>
 <body>
     <script id="SampleCellTemplate" type="text/html">
@@ -24,6 +25,13 @@
     <div id="canvasScroller" class="ios" data-bind="tronGrid: canvasOptions"></div>
     <button data-bind="click: changeCanvasData">Start Value Changes</button>
 
+
+    <h3>Scroll Sync Behavior Sample</h3>
+    <div id="syncScroller" class="ios" data-bind="tronGrid: scrollSyncOptions"></div>
+    <div id="synchronizedScroller">
+        <div id="scrollableContent"></div>
+    </div>
+    <button data-bind="click: function() { $data.syncIsActive(!$data.syncIsActive()); }, text: ($data.syncIsActive() ? 'Active' : 'Inactive')" />
     <ol data-bind="foreach:log">
         <li data-bind="text: $data"></li>
     </ol>

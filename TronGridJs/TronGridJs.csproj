@@ -31,7 +31,10 @@
       <DependentUpon>ko-trongrid.ts</DependentUpon>
     </Content>
     <Content Include="touchscroll-trongrid.js">
-      <DependentUpon>touchscroll-trongrid.ts</DependentUpon>
+      <DependentUpon>trongrid-touchscroll.ts</DependentUpon>
+    </Content>
+    <Content Include="trongrid-scrollsync.js">
+      <DependentUpon>trongrid-scrollsync.ts</DependentUpon>
     </Content>
     <Content Include="trongrid.js">
       <DependentUpon>trongrid.ts</DependentUpon>
@@ -41,7 +44,8 @@
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
     <TypeScriptCompile Include="ko-trongrid.ts" />
-    <TypeScriptCompile Include="touchscroll-trongrid.ts" />
+    <TypeScriptCompile Include="trongrid-touchscroll.ts" />
+    <TypeScriptCompile Include="trongrid-scrollsync.ts" />
     <TypeScriptCompile Include="trongrid.ts" />
     <TypeScriptCompile Include="types\jquery.d.ts" />
     <TypeScriptCompile Include="types\knockout.d.ts" />
@@ -59,7 +63,10 @@
       <DependentUpon>ko-trongrid.ts</DependentUpon>
     </Content>
     <Content Include="touchscroll-trongrid.js.map">
-      <DependentUpon>touchscroll-trongrid.ts</DependentUpon>
+      <DependentUpon>trongrid-touchscroll.ts</DependentUpon>
+    </Content>
+    <Content Include="trongrid-scrollsync.js.map">
+      <DependentUpon>trongrid-scrollsync.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>

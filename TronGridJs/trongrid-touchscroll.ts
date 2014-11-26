@@ -1,5 +1,4 @@
-﻿
-module TronGrid {
+﻿module TronGrid {
     export class TouchScrollBehavior implements IGridBehavior {
         private grid: TronGrid;
 
