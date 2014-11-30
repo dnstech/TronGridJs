@@ -30,11 +30,11 @@
     <Content Include="ko-trongrid.js">
       <DependentUpon>ko-trongrid.ts</DependentUpon>
     </Content>
-    <Content Include="touchscroll-trongrid.js">
-      <DependentUpon>trongrid-touchscroll.ts</DependentUpon>
-    </Content>
     <Content Include="trongrid-scrollsync.js">
       <DependentUpon>trongrid-scrollsync.ts</DependentUpon>
+    </Content>
+    <Content Include="trongrid-touchscroll.js">
+      <DependentUpon>trongrid-touchscroll.ts</DependentUpon>
     </Content>
     <Content Include="trongrid.js">
       <DependentUpon>trongrid.ts</DependentUpon>
@@ -62,11 +62,11 @@
     <Content Include="ko-trongrid.js.map">
       <DependentUpon>ko-trongrid.ts</DependentUpon>
     </Content>
-    <Content Include="touchscroll-trongrid.js.map">
-      <DependentUpon>trongrid-touchscroll.ts</DependentUpon>
-    </Content>
     <Content Include="trongrid-scrollsync.js.map">
       <DependentUpon>trongrid-scrollsync.ts</DependentUpon>
+    </Content>
+    <Content Include="trongrid-touchscroll.js.map">
+      <DependentUpon>trongrid-touchscroll.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
