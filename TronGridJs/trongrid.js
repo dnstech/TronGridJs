@@ -764,7 +764,7 @@ var TronGrid;
         };
 
         TronGrid.prototype.render = function () {
-            if (!this.scrollBounds.isValid()) {
+            if (!this.scrollBounds || !this.scrollBounds.isValid()) {
                 return;
             }
 
@@ -895,9 +895,18 @@ var TronGrid;
         };
 
         TronGrid.prototype.getBlockIndex = function (row, column) {
-            var br = (((row * this.provider.columnCount) / this.provider.columnsPerBlock) | 0);
-            var bc = (column / this.provider.columnsPerBlock) | 0;
-            return br + bc;
+            var br = Math.floor(row / this.provider.rowsPerBlock) || 0;
+            var bc = Math.floor(column / this.provider.columnsPerBlock) || 0;
+            var i = (br * this.blockWidths.length) + bc;
+
+            //// DEBUG: ASSERTION
+            ////var b = this.blocks[i];
+            ////if (b.cellRange.lastRow < row || b.cellRange.firstRow > row) {
+            ////    throw "bad row";
+            ////} else if (b.cellRange.lastColumn < column || b.cellRange.firstColumn > column) {
+            ////    throw "bad column";
+            ////}
+            return i;
         };
 
         TronGrid.prototype.clearMeasurements = function () {
