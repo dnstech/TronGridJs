@@ -108,6 +108,19 @@ var TronGrid;
             return (this.lastRow - this.firstRow) * (this.lastColumn - this.firstColumn);
         };
 
+        /** Calculates the absolute row and column for a given index relative to the cell range
+        (where the top left cell in the range is zero, and the bottom right cell in the range is the range's cell count - 1) */
+        CellRange.prototype.rowAndColumnForRelativeIndex = function (index) {
+            var columnCount = this.lastColumn - this.firstColumn;
+            var row = Math.floor(index / columnCount);
+            var cell = {
+                row: row,
+                column: index - (row * columnCount)
+            };
+
+            return cell;
+        };
+
         CellRange.prototype.setTopLeft = function (topLeftBlock) {
             this.firstColumn = topLeftBlock.cellRange.firstColumn;
             this.firstBlockColumn = topLeftBlock.cellRange.firstBlockColumn;
@@ -424,11 +437,6 @@ var TronGrid;
                 initialColumn: 0,
                 initialRow: 0
             };
-            this.defaultDataProviderOptions = {
-                dataPresenter: new TextPresenter(),
-                columnsPerBlock: 10,
-                rowsPerBlock: 10
-            };
             this.renderQueued = 0;
             this.measureQueued = false;
             this.options = this.defaultOptions;
@@ -466,13 +474,31 @@ var TronGrid;
                 lastBlockRow: 0
             };
             this.blocks = [];
+            this.sizeChangedListener = this.sizeChanged.bind(this);
             this.registerEventHandlers();
         }
+        TronGrid.prototype.dispose = function () {
+            this.disposeData();
+            window.removeEventListener('resize', this.sizeChangedListener);
+        };
+
         TronGrid.prototype.update = function (o) {
             var _this = this;
             this.options = $.extend({}, this.defaultOptions, o);
-            this.provider = $.extend({}, this.defaultDataProviderOptions, this.options.dataProvider);
+            this.provider = this.options.dataProvider;
             this.presenter = this.options.dataPresenter;
+            this.provider['dataForElement'] = function (element) {
+                var parts = element.id.split('_');
+                var row = Number(parts[1]);
+                var column = Number(parts[2]);
+                if (!isNaN(row) && !isNaN(column)) {
+                    var data = _this.provider.cellData(row, column);
+                    return data;
+                }
+
+                return null;
+            };
+
             this.subscribeData();
 
             ////this.content = document.createElement('div');
@@ -494,7 +520,7 @@ var TronGrid;
 
             _TronGrid.enqueue(function () {
                 _this.updateScrollBounds();
-                _this.dataChanged();
+                _this.enqueueMeasureAndRender();
             });
         };
 
@@ -660,9 +686,9 @@ var TronGrid;
                     if (!b) {
                         var cellRange = new CellRange();
                         cellRange.firstRow = br * this.provider.rowsPerBlock;
-                        cellRange.lastRow = (br * this.provider.rowsPerBlock) + this.provider.rowsPerBlock;
+                        cellRange.lastRow = Math.min((br * this.provider.rowsPerBlock) + this.provider.rowsPerBlock, this.provider.rowCount);
                         cellRange.firstColumn = (bc * this.provider.columnsPerBlock);
-                        cellRange.lastColumn = (bc * this.provider.columnsPerBlock) + this.provider.columnsPerBlock;
+                        cellRange.lastColumn = Math.min((bc * this.provider.columnsPerBlock) + this.provider.columnsPerBlock, this.provider.columnCount);
                         cellRange.firstBlockRow = br;
                         cellRange.lastBlockRow = br;
                         cellRange.firstBlockColumn = bc;
@@ -921,13 +947,15 @@ var TronGrid;
             this.blockWidths = [];
             this.columnWidths = [];
             this.rowHeights = [];
+            this.totalHeight = 0;
+            this.totalWidth = 0;
         };
 
         /** Invalidates the rendered data, either wholesale or selectively by row, column or both,
         If cell sizes are affected by data then sizeChanged should be set to true */
         TronGrid.prototype.dataChanged = function (change) {
-            var hasRow = !!change && typeof change.firstRow !== 'undefined';
-            var hasColumn = !!change && typeof change.firstColumn !== 'undefined';
+            var hasRow = !!change && (typeof change.firstRow !== 'undefined' || typeof change.lastRow !== 'undefined');
+            var hasColumn = !!change && (typeof change.firstColumn !== 'undefined' || typeof change.lastColumn !== 'undefined');
             var sizeChanged = (!!change && change.sizeChanged) || false;
             var cellCountChanged = sizeChanged && this.columnWidths.length !== this.provider.columnCount || this.rowHeights.length !== this.provider.rowCount;
             if (cellCountChanged) {
@@ -936,17 +964,11 @@ var TronGrid;
                 return;
             }
 
-            if (!hasRow && hasColumn) {
-                // Invalidate all rows for the column range
-                change.firstRow = 0;
-                change.lastRow = typeof change.lastRow !== 'undefined' ? change.lastRow : this.rowHeights.length;
-            }
-
-            if (hasRow && !hasColumn) {
-                // Invalidate all columns for the row range;
-                change.firstColumn = 0;
-                change.lastColumn = typeof change.lastColumn !== 'undefined' ? change.lastColumn : this.columnWidths.length;
-            }
+            // Invalidate all rows for the column range
+            change.firstRow = typeof change.firstRow !== 'undefined' ? change.firstRow : 0;
+            change.lastRow = typeof change.lastRow !== 'undefined' ? change.lastRow : this.rowHeights.length;
+            change.firstColumn = typeof change.firstColumn !== 'undefined' ? change.firstColumn : 0;
+            change.lastColumn = typeof change.lastColumn !== 'undefined' ? change.lastColumn : this.columnWidths.length;
 
             // Row set, but column undefined invalidates an entire row,
             // Column set, but row undefined invalidates an entire column.
@@ -987,22 +1009,41 @@ var TronGrid;
         };
 
         TronGrid.prototype.scrollTo = function (scroll) {
-            var leftOffset = this.sumRange(this.columnWidths, 0, scroll.firstColumn);
-            var topOffset = this.sumRange(this.rowHeights, 0, scroll.firstRow);
-            var width = this.sumRange(this.columnWidths, scroll.firstColumn, scroll.lastColumn + 1);
-            var height = this.sumRange(this.rowHeights, scroll.firstRow, scroll.lastRow + 1);
-            var rect = new Rectangle(leftOffset, topOffset, width, height);
+            var alignLeftEdge = false;
+            var alignTopEdge = false;
+            var alignRightEdge = false;
+            var alignBottomEdge = false;
+            var leftEdge = 0;
+            var rightEdge = 0;
+            var topEdge = 0;
+            var bottomEdge = 0;
+            if (typeof scroll.firstColumn !== 'undefined') {
+                leftEdge = this.sumRange(this.columnWidths, 0, scroll.firstColumn);
+                alignLeftEdge = leftEdge < this.scroller.scrollLeft || !scroll.lastColumn;
+            }
 
-            var alignRightEdge = rect.right < this.scroller.scrollLeft + this.scrollerSize.width;
-            var alignLeftEdge = rect.left > this.scroller.scrollLeft;
-            var alignBottomEdge = rect.bottom < this.scroller.scrollTop + this.scrollerSize.height;
-            var alignTopEdge = rect.top > this.scroller.scrollTop;
+            if (typeof scroll.firstRow !== 'undefined') {
+                topEdge = this.sumRange(this.rowHeights, 0, scroll.firstRow);
+                alignTopEdge = topEdge < this.scroller.scrollTop || !scroll.lastRow;
+            }
+
+            if (typeof scroll.lastColumn !== 'undefined') {
+                rightEdge = this.sumRange(this.columnWidths, 0, scroll.lastColumn + 1);
+                alignRightEdge = rightEdge > this.scroller.scrollLeft + this.scrollerSize.width;
+            }
+
+            if (typeof scroll.lastRow !== 'undefined') {
+                bottomEdge = this.sumRange(this.rowHeights, 0, scroll.lastRow + 1);
+                alignBottomEdge = bottomEdge > this.scroller.scrollTop + this.scrollerSize.height;
+            }
+
             if (!alignLeftEdge && !alignRightEdge && !alignTopEdge && !alignBottomEdge) {
                 return;
             }
 
-            var scrollX = alignLeftEdge ? leftOffset : (alignRightEdge ? Math.max(0, leftOffset + width - this.scrollerSize.width) : this.scroller.scrollLeft);
-            var scrollY = alignTopEdge ? topOffset : (alignBottomEdge ? Math.max(0, topOffset + height - this.scrollerSize.height) : this.scroller.scrollTop);
+            ////console.log('scrollTo', { alignLeftEdge: alignLeftEdge, alignRightEdge: alignRightEdge });
+            var scrollX = alignLeftEdge ? leftEdge : (alignRightEdge ? Math.max(0, rightEdge - this.scrollerSize.width) : this.scroller.scrollLeft);
+            var scrollY = alignTopEdge ? topEdge : (alignBottomEdge ? Math.max(0, bottomEdge - this.scrollerSize.height) : this.scroller.scrollTop);
             if (!!scroll.duration) {
                 $(this.scroller).animate({
                     scrollLeft: scrollX,
@@ -1040,10 +1081,8 @@ var TronGrid;
         };
 
         TronGrid.prototype.registerEventHandlers = function () {
-            var _this = this;
-            $(window).resize(function () {
-                return _this.sizeChanged();
-            });
+            ////$(window).resize(() => this.sizeChanged());
+            window.addEventListener('resize', this.sizeChangedListener);
 
             ////ko.utils.domNodeDisposal.addDisposeCallback(this.scroller, () => $(this.scroller).off('resize'));
             ////ko.utils.registerEventHandler(this.scroller, 'resize', this.sizeChanged.bind(this));
