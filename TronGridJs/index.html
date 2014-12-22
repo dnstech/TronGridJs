@@ -27,8 +27,8 @@
 
 
     <h3>Scroll Sync Behavior Sample</h3>
-    <div id="syncScroller" class="ios" data-bind="tronGrid: scrollSyncOptions"></div>
-    <div id="synchronizedScroller">
+    <div id="syncScroller" class="ios" data-bind="tronGrid: scrollSyncOptions, scrollSync: '#scrollableContent'"></div>
+    <div id="synchronizedHorizontalScroller">
         <div id="scrollableContent"></div>
     </div>
     <button data-bind="click: function() { $data.syncIsActive(!$data.syncIsActive()); }, text: ($data.syncIsActive() ? 'Active' : 'Inactive')" />

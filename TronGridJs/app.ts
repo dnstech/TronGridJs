@@ -22,10 +22,7 @@ class MainViewModel {
 
     scrollSyncOptions = {
         dataProvider: new SampleDataProvider(),
-        dataPresenter: new TronGrid.TextPresenter(),
-        behaviors: [
-            new TronGrid.ScrollSyncBehavior('#synchronizedScroller', '#scrollableContent', true, this.syncIsActive)
-        ]
+        dataPresenter: new TronGrid.TextPresenter()
     };
 
     changeTextData() {

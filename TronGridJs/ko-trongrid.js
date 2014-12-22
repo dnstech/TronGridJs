@@ -17,6 +17,52 @@ ko.bindingHandlers.tronGrid = {
     }
 };
 
+ko.bindingHandlers.scrollSync = {
+    init: function (element, valueAccessor, allBindingsAccessor) {
+        TronGrid.enqueue(function () {
+            var options = ko.unwrap(valueAccessor());
+            var selector = null;
+            var isVertical = false;
+            if (typeof options === 'string') {
+                selector = options;
+            } else {
+                selector = options.selector;
+                isVertical = options.orientation === 'vertical';
+            }
+            var sourceContainer = $(element).closest(selector);
+
+            if (!sourceContainer.length) {
+                sourceContainer = $(selector + ':visible');
+            }
+
+            var source = sourceContainer.parent();
+
+            var container = $(element).find(allBindingsAccessor()['content']);
+
+            var je = $(element);
+            var jw = $(window);
+            var update = function () {
+                if (isVertical) {
+                    container.height(sourceContainer.height());
+                    je.scrollTop(source.scrollTop());
+                } else {
+                    container.width(sourceContainer.width());
+                    je.scrollLeft(source.scrollLeft());
+                }
+            };
+
+            update();
+            source.on('scroll', update);
+            jw.on('resize', update);
+
+            ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
+                source.off('scroll', update);
+                jw.off('resize', update);
+            });
+        });
+    }
+};
+
 var TronGrid;
 (function (TronGrid) {
     var KnockoutTemplatePresenter = (function () {

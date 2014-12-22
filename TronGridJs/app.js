@@ -16,10 +16,7 @@ var MainViewModel = (function () {
         };
         this.scrollSyncOptions = {
             dataProvider: new SampleDataProvider(),
-            dataPresenter: new TronGrid.TextPresenter(),
-            behaviors: [
-                new TronGrid.ScrollSyncBehavior('#synchronizedScroller', '#scrollableContent', true, this.syncIsActive)
-            ]
+            dataPresenter: new TronGrid.TextPresenter()
         };
     }
     MainViewModel.prototype.changeTextData = function () {
