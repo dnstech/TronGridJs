@@ -160,12 +160,6 @@ var TronGrid;
             this.isMeasured = false;
             this.currentLeft = 0;
             this.currentTop = 0;
-            ////public firstRow: number,
-            ////public lastRow: number,
-            ////public firstColumn: number,
-            ////public lastColumn: number,
-            ////public blockRow: number,
-            ////public blockColumn: number,
             this.blockId = 'tgb_' + padLeft(this.index, 10);
         }
         CellBlock.prototype.show = function (parent, container) {

@@ -275,13 +275,6 @@ module TronGrid {
         constructor(
             public index: number,
             public cellRange: CellRange) {
-
-            ////public firstRow: number,
-            ////public lastRow: number,
-            ////public firstColumn: number,
-            ////public lastColumn: number,
-            ////public blockRow: number,
-            ////public blockColumn: number,
             this.blockId = 'tgb_' + padLeft(this.index, 10);
         }
 
