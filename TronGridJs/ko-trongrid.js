@@ -4,6 +4,11 @@ ko.bindingHandlers.tronGrid = {
     init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
         var grid = new TronGrid.TronGrid(element);
         ko.utils.domData.set(element, 'trongrid', grid);
+
+        ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
+            var grid = ko.utils.domData.get(element, 'trongrid');
+            grid.dispose();
+        });
     },
     update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
         var o = ko.unwrap(valueAccessor());
