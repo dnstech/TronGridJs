@@ -5,19 +5,19 @@
 class MainViewModel {
     log = ko.observableArray([]);
     timer: any;
-    lastUpdated = ko.observable('');
+    lastUpdated = ko.observable("");
     syncIsActive = ko.observable(false);
 
     textOptions = {
         dataProvider: new SampleDataProvider(),
-        dataPresenter: new TronGrid.TextPresenter(),
-        //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
+        dataPresenter: new TronGrid.TextPresenter()
+        ////behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
     };
 
     canvasOptions = {
         dataProvider: new SampleChartDataProvider(),
         dataPresenter: new SampleCanvasPresenter()
-        //behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
+        ////behaviors: [ new TronGrid.TouchScrollBehavior(this.log) ]
     };
 
     scrollSyncOptions = {
@@ -80,15 +80,15 @@ class SampleChartDataProvider implements TronGrid.IDataProvider {
     columnsPerBlock = 5;
     dataChanged = ko.observable<TronGrid.IDataChanged>();
 
-    rowHeight(r) {
+    rowHeight(row: number) {
         return 200;
     }
 
-    columnWidth(c) {
+    columnWidth(column: number) {
         return 100;
     }
 
-    cellData(r, c) {
+    cellData(row: number, column: number) {
         var d = new Date();
         return d.getMilliseconds();
     }
@@ -148,22 +148,22 @@ class SampleCanvasPresenter implements TronGrid.IDataPresenter {
 class SampleDataProvider implements TronGrid.IDataProvider {
     rowCount = 1000;
     columnCount = 100;
-    rowsPerBlock = 10;
+    rowsPerBlock = 5;
     columnsPerBlock = 20;
     scrollIntoView = ko.observable<TronGrid.IScrollRequest>();
     dataChanged = ko.observable<TronGrid.IDataChanged>(null);
 
     cellData(r, c) {
         var d = new Date();
-        return '[' + r + ',' + c + '] ' + d.getMinutes() + ':' + d.getSeconds();
+        return r + ', ' + c;
     }
 
     rowHeight(r) {
-        return new Date().getSeconds() % 2 === 0 ? 50 : 25;
+        return 30;
     }
 
     columnWidth(c) {
-        return 100;
+        return 130;
     }
 
 }

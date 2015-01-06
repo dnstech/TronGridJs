@@ -1,29 +1,25 @@
-﻿/// <reference path="types/knockout.d.ts" />
+/// <reference path="types/knockout.d.ts" />
 /// <reference path="types/jquery.d.ts" />
 window['requestAnimFrame'] = (function () {
     return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (callback) {
         window.setTimeout(callback, 1000 / 60);
     };
 })();
-
 (function () {
     // prepare base perf object
     if (typeof window.performance === 'undefined') {
         window.performance = {};
     }
-
     if (!window.performance.now) {
         var nowOffset = Date.now();
         if (performance.timing && performance.timing.navigationStart) {
             nowOffset = performance.timing.navigationStart;
         }
-
         window.performance.now = function now() {
             return Date.now() - nowOffset;
         };
     }
 })();
-
 var TronGrid;
 (function (_TronGrid) {
     _TronGrid.enqueue = !!window.setImmediate ? function (f) {
@@ -31,7 +27,6 @@ var TronGrid;
     } : function (f) {
         window.setTimeout(f, 1000 / 30);
     };
-
     function padLeft(n, w) {
         var n_ = Math.abs(n);
         var zeros = Math.max(0, w - Math.floor(n_).toString().length);
@@ -39,13 +34,11 @@ var TronGrid;
         if (n < 0) {
             zeroString = '-' + zeroString;
         }
-
         return zeroString + n;
     }
-
     function binarySearch(array, findValue, compareFunction, startIndex, length) {
-        if (typeof startIndex === "undefined") { startIndex = 0; }
-        if (typeof length === "undefined") { length = array.length; }
+        if (startIndex === void 0) { startIndex = 0; }
+        if (length === void 0) { length = array.length; }
         var num1 = startIndex;
         var num2 = startIndex + length - 1;
         while (num1 <= num2) {
@@ -54,17 +47,15 @@ var TronGrid;
             if (num3 == 0) {
                 return index1;
             }
-
             if (num3 < 0) {
                 num1 = index1 + 1;
-            } else {
+            }
+            else {
                 num2 = index1 - 1;
             }
         }
-
         return ~num1;
     }
-
     function insertSortedById(parent, newNode) {
         var id = newNode.id;
         var index = -1;
@@ -75,14 +66,13 @@ var TronGrid;
                 break;
             }
         }
-
         if (index !== -1) {
             parent.insertBefore(newNode, parent.children[index]);
-        } else {
+        }
+        else {
             parent.appendChild(newNode);
         }
     }
-
     var CellRange = (function () {
         function CellRange(firstBlock, lastBlock) {
             this.firstColumn = 0;
@@ -99,7 +89,6 @@ var TronGrid;
                     this.setBottomRight(firstBlock);
                 }
             }
-
             if (lastBlock) {
                 this.setBottomRight(lastBlock);
             }
@@ -107,7 +96,6 @@ var TronGrid;
         CellRange.prototype.cellCount = function () {
             return (this.lastRow - this.firstRow) * (this.lastColumn - this.firstColumn);
         };
-
         /** Calculates the absolute row and column for a given index relative to the cell range
         (where the top left cell in the range is zero, and the bottom right cell in the range is the range's cell count - 1) */
         CellRange.prototype.rowAndColumnForRelativeIndex = function (index) {
@@ -117,38 +105,31 @@ var TronGrid;
                 row: row,
                 column: index - (row * columnCount)
             };
-
             return cell;
         };
-
         CellRange.prototype.setTopLeft = function (topLeftBlock) {
             this.firstColumn = topLeftBlock.cellRange.firstColumn;
             this.firstBlockColumn = topLeftBlock.cellRange.firstBlockColumn;
             this.firstRow = topLeftBlock.cellRange.firstRow;
             this.firstBlockRow = topLeftBlock.cellRange.firstBlockRow;
         };
-
         CellRange.prototype.setBottomRight = function (bottomRight) {
             this.lastColumn = bottomRight.cellRange.lastColumn;
             this.lastBlockColumn = bottomRight.cellRange.lastBlockColumn;
             this.lastRow = bottomRight.cellRange.lastRow;
             this.lastBlockRow = bottomRight.cellRange.lastBlockRow;
         };
-
         CellRange.prototype.isEmpty = function () {
             return this.firstColumn === 0 && this.lastColumn === 0 && this.firstRow === 0 && this.lastRow === 0 && this.firstBlockColumn === 0 && this.firstBlockRow === 0 && this.lastBlockColumn === 0 && this.lastBlockRow === 0;
         };
-
         CellRange.prototype.equals = function (cellRange) {
             if (!cellRange) {
                 return false;
             }
-
             return this.firstColumn === cellRange.firstColumn && this.lastColumn === cellRange.lastColumn && this.firstRow === cellRange.firstRow && this.lastRow === cellRange.lastRow && this.firstBlockColumn === cellRange.firstBlockColumn && this.firstBlockRow === cellRange.firstBlockRow && this.lastBlockColumn === cellRange.lastBlockColumn && this.lastBlockRow === cellRange.lastBlockRow;
         };
         return CellRange;
     })();
-
     /** A set of cells rendered as a single chunk */
     var CellBlock = (function () {
         function CellBlock(index, cellRange) {
@@ -167,49 +148,41 @@ var TronGrid;
             if (!this.isRendered) {
                 this.render(parent);
             }
-
             if (this.isVisible) {
                 return;
             }
-
             this.isVisible = true;
             container.appendChild(this.block);
             ////insertSortedById(this.parent, this.block);
         };
-
         CellBlock.prototype.hide = function (container) {
             this.markedForRemoval = false;
             if (!this.isVisible) {
                 return;
             }
-
             this.isVisible = false;
             container.removeChild(this.block);
         };
-
         CellBlock.prototype.invalidate = function (measurementsChanged) {
-            if (typeof measurementsChanged === "undefined") { measurementsChanged = false; }
+            if (measurementsChanged === void 0) { measurementsChanged = false; }
             if (measurementsChanged) {
                 this.isMeasured = false;
             }
-
             this.isRendered = false;
         };
-
         CellBlock.prototype.createBlockElement = function (presenter) {
             var b;
             if (presenter.createBlock) {
                 b = presenter.createBlock(this.cellRange);
-            } else {
+            }
+            else {
                 b = document.createElement('div');
             }
-
             b.setAttribute('id', this.blockId);
             b.className += ' block';
             this.bounds.apply(b);
             return b;
         };
-
         CellBlock.prototype.createCellElement = function (parent, r, c) {
             var cell;
             if (!!parent.presenter.createCell) {
@@ -217,29 +190,24 @@ var TronGrid;
                     width: parent.columnWidths[c],
                     height: parent.rowHeights[r]
                 };
-
                 cell = parent.presenter.createCell(r, c, size);
-            } else {
+            }
+            else {
                 cell = document.createElement('div');
             }
-
             cell.setAttribute('id', 'tgc_' + r + '_' + c);
             cell.className += ' cell';
             return cell;
         };
-
         /** Binds to just the relevant portion of the full two-dimensional cells array */
         CellBlock.prototype.render = function (parent) {
             if (!this.block) {
                 this.block = this.createBlockElement(parent.presenter);
             }
-
             this.renderBlock(parent, this.block);
-
             this.isMeasured = true;
             this.isRendered = true;
         };
-
         CellBlock.prototype.renderBlock = function (parent, block) {
             if (block.childElementCount !== this.cellRange.cellCount()) {
                 var fragment = document.createDocumentFragment();
@@ -250,9 +218,9 @@ var TronGrid;
                         fragment.appendChild(cell);
                     }
                 }
-
                 this.block.appendChild(fragment);
-            } else {
+            }
+            else {
                 // Recycle cells
                 var cellIndex = 0;
                 for (var r = this.cellRange.firstRow; r < this.cellRange.lastRow; r++) {
@@ -264,47 +232,40 @@ var TronGrid;
                 }
             }
         };
-
         CellBlock.prototype.renderCell = function (parent, r, c, cell, recycled) {
             var size = {
                 width: parent.columnWidths[c],
                 height: parent.rowHeights[r]
             };
-
             var cellData = parent.provider.cellData(r, c, parent.visibleCellRange);
             if (!this.isMeasured) {
                 if (c === this.cellRange.firstColumn) {
                     this.currentLeft = 0;
                 }
-
                 if (r === this.cellRange.firstRow) {
                     this.currentTop = 0;
                 }
-
                 cell.style.left = this.currentLeft + 'px';
                 cell.style.top = this.currentTop + 'px';
-
                 // HACK: Fudged width by 0.5 because of rendering bug in Chrome to do with either anti-aliasing or measurement rounding.
                 cell.style.width = (size.width + 0.5) + 'px';
                 cell.style.height = size.height + 'px';
-
                 if (c === this.cellRange.lastColumn - 1) {
                     this.currentLeft = 0;
                     this.currentTop += size.height;
-                } else {
+                }
+                else {
                     this.currentLeft += size.width;
                 }
             }
-
             parent.presenter.renderCell(cell, cellData, r, c, size, recycled);
         };
         return CellBlock;
     })();
-
     var Rectangle = (function () {
         function Rectangle(left, top, width, height) {
-            if (typeof width === "undefined") { width = 0; }
-            if (typeof height === "undefined") { height = 0; }
+            if (width === void 0) { width = 0; }
+            if (height === void 0) { height = 0; }
             this.left = left;
             this.top = top;
             this.width = width;
@@ -317,25 +278,20 @@ var TronGrid;
                 style[prefs[pref] + prop] = value;
             }
         };
-
         Rectangle.prototype.compareX = function (x) {
             if (this.left > x)
                 return -1;
             if (this.right < x)
                 return 1;
-
             return 0;
         };
-
         Rectangle.prototype.compareY = function (y) {
             if (this.top > y)
                 return -1;
             if (this.bottom < y)
                 return 1;
-
             return 0;
         };
-
         /** Compares this rectangle to the point specified */
         Rectangle.prototype.compareToPoint = function (x, y) {
             if (this.left > x)
@@ -346,33 +302,26 @@ var TronGrid;
                 return -1;
             if (this.bottom < y)
                 return 1;
-
             return 0;
         };
-
         Rectangle.prototype.intersects = function (other) {
             // DEBUG: Check for nans
             if (!this.isValid()) {
                 throw 'Cannot intersect this is invalid: [' + this.toString() + ']';
             }
-
             if (!other.isValid()) {
                 throw 'Cannot intersect other is invalid: [' + other.toString() + ']';
             }
-
             return !(this.left > other.right || this.right < other.left || this.top > other.bottom || this.bottom < other.top);
         };
-
         Rectangle.prototype.isValid = function () {
             return !isNaN(this.left) && !isNaN(this.right) && !isNaN(this.top) && !isNaN(this.bottom);
         };
-
         Rectangle.prototype.zeroSize = function () {
             this.width = 0;
             this.height = 0;
             this.recalculate();
         };
-
         /** Returns a new Rectangle expanded to the specified size,
         centered on this rectangle if possible (will not give negative bounds) */
         Rectangle.prototype.resize = function (size) {
@@ -384,24 +333,20 @@ var TronGrid;
             var t = Math.max(0, (this.top - halfNewHeight) + halfHeight);
             return new Rectangle(l, t, size.width, size.height);
         };
-
         Rectangle.prototype.apply = function (element) {
             element.style.top = this.top + 'px';
             element.style.left = this.left + 'px';
             element.style.width = this.width + 'px';
             element.style.height = this.height + 'px';
         };
-
         Rectangle.prototype.apply3dTranslate = function (element) {
             this.prefix(element.style, 'Transform', 'translate3d(' + this.left + 'px,' + this.top + 'px, 0)');
             element.style.width = this.width + 'px';
             element.style.height = this.height + 'px';
         };
-
         Rectangle.prototype.toString = function () {
             return this.left + ',' + this.top + ',' + this.width + 'x' + this.height;
         };
-
         Rectangle.prototype.recalculate = function () {
             this.right = this.left + this.width;
             this.bottom = this.top + this.height;
@@ -409,7 +354,6 @@ var TronGrid;
         return Rectangle;
     })();
     _TronGrid.Rectangle = Rectangle;
-
     var TextPresenter = (function () {
         function TextPresenter() {
         }
@@ -419,7 +363,6 @@ var TronGrid;
         return TextPresenter;
     })();
     _TronGrid.TextPresenter = TextPresenter;
-
     /** The main grid logic, which is attached to the Scroller via the binding handler */
     var TronGrid = (function () {
         function TronGrid(scroller) {
@@ -431,6 +374,8 @@ var TronGrid;
             };
             this.renderQueued = 0;
             this.measureQueued = false;
+            /** Number of milliseconds to give to rendering blocks in each frame */
+            this.frameBudget = 8;
             this.options = this.defaultOptions;
             this.blockLefts = [];
             this.blockTops = [];
@@ -473,7 +418,6 @@ var TronGrid;
             this.disposeData();
             window.removeEventListener('resize', this.sizeChangedListener);
         };
-
         TronGrid.prototype.update = function (o) {
             var _this = this;
             this.options = $.extend({}, this.defaultOptions, o);
@@ -487,12 +431,9 @@ var TronGrid;
                     var data = _this.provider.cellData(row, column);
                     return data;
                 }
-
                 return null;
             };
-
             this.subscribeData();
-
             ////this.content = document.createElement('div');
             ////this.content.className = 'tron-grid-viewport';
             ////this.scroller.appendChild(this.content);
@@ -502,20 +443,17 @@ var TronGrid;
                 this.blockContainer.className = 'tron-grid-container';
                 this.scroller.appendChild(this.blockContainer);
                 this.content = this.blockContainer;
-
                 if (!!this.options.behaviors) {
                     for (var b = 0; b < this.options.behaviors.length; b++) {
                         this.options.behaviors[b].attach(this);
                     }
                 }
             }
-
             _TronGrid.enqueue(function () {
                 _this.updateScrollBounds();
                 _this.enqueueMeasureAndRender();
             });
         };
-
         // AC: Experiment using requestAnimationFrame to ensure scroll changes are only raised once per frame.
         ////ticking = false;
         ////updateScrollAndRender() {
@@ -538,16 +476,13 @@ var TronGrid;
                     }
                 }
             }
-
             this.enqueueRender(2);
         };
-
         TronGrid.prototype.enqueueMeasureAndRender = function () {
             var _this = this;
             if (this.measureQueued) {
                 return;
             }
-
             this.measureQueued = true;
             this.renderQueued = 1;
             window.requestAnimFrame(function () {
@@ -557,14 +492,12 @@ var TronGrid;
                 _this.render();
             });
         };
-
         TronGrid.prototype.enqueueRender = function (everyFrames) {
             var _this = this;
-            if (typeof everyFrames === "undefined") { everyFrames = 1; }
+            if (everyFrames === void 0) { everyFrames = 1; }
             if (this.renderQueued) {
                 return;
             }
-
             this.renderQueued = everyFrames;
             var self;
             self = function () {
@@ -572,14 +505,13 @@ var TronGrid;
                 if (_this.renderQueued <= 0) {
                     _this.renderQueued = 0;
                     _this.render();
-                } else {
+                }
+                else {
                     window.requestAnimFrame(self);
                 }
             };
-
             window.requestAnimFrame(self);
         };
-
         TronGrid.prototype.updateScrollBounds = function () {
             if (this.scrollerSize.width === 0 || this.scrollerSize.height === 0) {
                 this.scrollerSize = {
@@ -587,10 +519,8 @@ var TronGrid;
                     height: this.scroller.clientHeight
                 };
             }
-
             this.scrollBounds = new Rectangle(this.scroller.scrollLeft, this.scroller.scrollTop, this.scrollerSize.width, this.scrollerSize.height);
         };
-
         TronGrid.prototype.measureColumns = function () {
             var blockColumn = 0;
             var blockLeft = 0;
@@ -605,30 +535,26 @@ var TronGrid;
                     this.columnWidths[c] = w;
                     this.totalWidth += w;
                     blockWidth += w;
-
                     currentColumnInBlock++;
                     if (currentColumnInBlock === this.provider.columnsPerBlock) {
                         this.blockLefts[blockColumn] = blockLeft;
                         this.blockWidths[blockColumn] = blockWidth;
-
                         blockLeft += blockWidth;
                         blockWidth = 0;
                         blockColumn++;
                         currentColumnInBlock = 0;
                     }
                 }
-
                 this.blockLefts[blockColumn] = blockLeft;
                 this.blockWidths[blockColumn] = blockWidth;
-            } else if (this.columnWidths.length === 0) {
+            }
+            else if (this.columnWidths.length === 0) {
                 this.totalWidth = 0;
             }
-
             if (previousTotalWidth != this.totalWidth) {
                 this.content.style.width = this.totalWidth + 'px';
             }
         };
-
         TronGrid.prototype.measureRows = function () {
             var blockRow = 0;
             var blockTop = 0;
@@ -643,34 +569,29 @@ var TronGrid;
                     this.rowHeights[r] = h;
                     this.totalHeight += h;
                     blockHeight += h;
-
                     currentRowInBlock++;
                     if (currentRowInBlock === this.provider.rowsPerBlock) {
                         this.blockTops[blockRow] = blockTop;
                         this.blockHeights[blockRow] = blockHeight;
-
                         blockTop += blockHeight;
                         blockHeight = 0;
                         blockRow++;
                         currentRowInBlock = 0;
                     }
                 }
-
                 this.blockTops[blockRow] = blockTop;
                 this.blockHeights[blockRow] = blockHeight;
-            } else if (this.provider.rowCount === 0) {
+            }
+            else if (this.provider.rowCount === 0) {
                 this.totalHeight = 0;
             }
-
             if (this.totalHeight != previousTotalHeight) {
                 this.content.style.height = this.totalHeight + 'px';
             }
         };
-
         TronGrid.prototype.measure = function () {
             this.measureColumns();
             this.measureRows();
-
             var blockIndex = 0;
             for (var br = 0; br < this.blockHeights.length; br++) {
                 for (var bc = 0; bc < this.blockWidths.length; bc++) {
@@ -686,12 +607,9 @@ var TronGrid;
                         cellRange.firstBlockColumn = bc;
                         cellRange.lastBlockColumn = bc;
                         b = new CellBlock(blockIndex, cellRange);
-
                         this.blocks[blockIndex] = b;
                     }
-
                     b.bounds = new Rectangle(this.blockLefts[bc], this.blockTops[br], this.blockWidths[bc], this.blockHeights[br]);
-
                     ////if (!b.bounds.isValid()) {
                     ////    throw 'Invalid bounds ' + b.bounds.toString() + ', at index ' + blockIndex + '[' + br + ',' + bc + ']';
                     ////}
@@ -700,38 +618,30 @@ var TronGrid;
                 }
             }
         };
-
         TronGrid.prototype.getTopMostVisibleBlockIndex = function (bounds) {
             var topBlockIndex = binarySearch(this.blockTops, bounds.top, function (a, b) {
                 if (a > b) {
                     return 1;
                 }
-
                 if (a < b) {
                     return -1;
                 }
-
                 return 0;
             });
-
             if (topBlockIndex < 0) {
                 // Bitwise complement would give place to insert, go one up from that to give the first visible block
                 topBlockIndex = Math.max(0, ~topBlockIndex - 1);
             }
-
             return topBlockIndex;
         };
-
         TronGrid.prototype.getVisibleCellRange = function (bounds) {
             if (this.blocks.length === 0) {
                 return new CellRange();
             }
-
             // TODO: Make this accurate to the cell, for now just visible block first column
             var firstBlockRow = this.getTopMostVisibleBlockIndex(bounds);
             var firstBlockColumn = this.getLeftMostVisibleBlockIndex(bounds);
             var topLeftBlockIndex = this.getBlockIndexForBlockRowAndColumn(firstBlockRow, firstBlockColumn);
-
             var rightPosition = this.blockLefts[firstBlockColumn];
             var lastBlockColumn = firstBlockColumn;
             for (var c = firstBlockColumn; c < this.blockLefts.length; c++) {
@@ -741,7 +651,6 @@ var TronGrid;
                     break;
                 }
             }
-
             var topPosition = this.blockTops[firstBlockRow];
             var lastBlockRow = firstBlockRow;
             for (var r = firstBlockRow; r < this.blockTops.length; r++) {
@@ -751,63 +660,50 @@ var TronGrid;
                     break;
                 }
             }
-
             var bottomRightBlockIndex = this.getBlockIndexForBlockRowAndColumn(lastBlockRow, lastBlockColumn);
             return new CellRange(this.blocks[topLeftBlockIndex], this.blocks[bottomRightBlockIndex]);
         };
-
         TronGrid.prototype.getLeftMostVisibleBlockIndex = function (bounds) {
             var leftBlockIndex = binarySearch(this.blockLefts, bounds.left, function (a, b) {
                 if (a > b) {
                     return 1;
                 }
-
                 if (a < b) {
                     return -1;
                 }
-
                 return 0;
             });
-
             if (leftBlockIndex < 0) {
                 // Bitwise complement would give place to insert, go one left from that to give the first visible block
                 leftBlockIndex = Math.max(0, ~leftBlockIndex - 1);
             }
-
             return leftBlockIndex;
         };
-
         TronGrid.prototype.getBlockIndexForBlockRowAndColumn = function (blockRow, blockColumn) {
             return (blockRow * this.blockWidths.length) + blockColumn;
         };
-
         TronGrid.prototype.render = function () {
             if (!this.scrollBounds || !this.scrollBounds.isValid()) {
                 return;
             }
-
             var start = performance.now();
             var time = 0;
             var lookaheadBounds = this.scrollBounds.resize({
                 width: this.scrollBounds.width * 2,
                 height: this.scrollBounds.height * 2
             });
-
             var leftBlockIndex = this.getLeftMostVisibleBlockIndex(lookaheadBounds);
             var topBlockIndex = this.getTopMostVisibleBlockIndex(lookaheadBounds);
-
             var visibleBlockWidth = 0;
             var visibleBlockHeight = 0;
             var isTopLeftCell = true;
             var renderedRow = false;
             var hasRendered = false;
-
             for (var i = 0; i < this.blocks.length; i++) {
                 if (this.blocks[i].isVisible) {
                     this.blocks[i].markedForRemoval = true;
                 }
             }
-
             var firstBlock = this.blocks[(topBlockIndex * this.blockWidths.length) + leftBlockIndex];
             var lastBlock = firstBlock;
             for (var br = topBlockIndex; br < this.blockHeights.length; br++) {
@@ -820,26 +716,19 @@ var TronGrid;
                     if (visible) {
                         lastBlock = this.blocks[blockIndex];
                     }
-
                     renderedRow = renderedRow || visible;
                     if (renderedRow && isTopLeftCell) {
                         if (this.blockContainerLeft !== block.bounds.left) {
                             this.blockContainerLeft = block.bounds.left;
-                            //this.content.style.paddingLeft = block.bounds.left + 'px';
                         }
-
                         if (this.blockContainerTop !== block.bounds.top) {
                             this.blockContainerTop = block.bounds.top;
-                            //this.content.style.paddingTop = block.bounds.top + 'px';
                         }
-
                         isTopLeftCell = false;
                     }
-
                     if (visible) {
                         width += this.blocks[blockIndex].bounds.width;
                     }
-
                     time = performance.now() - start;
                     if (time > 8) {
                         // We're out of time, bail and enqueue another pass
@@ -847,31 +736,28 @@ var TronGrid;
                         return;
                     }
                 }
-
                 if (renderedRow) {
                     hasRendered = true;
                     visibleBlockWidth = width;
                     visibleBlockHeight += this.blocks[blockIndex].bounds.height;
-                } else {
+                }
+                else {
                     if (hasRendered) {
                         break;
                     }
                 }
             }
-
             for (var i = 0; i < this.blocks.length; i++) {
                 if (this.blocks[i].markedForRemoval) {
                     this.blocks[i].hide(this.blockContainer);
-
                     time = performance.now() - start;
-                    if (time > 8) {
+                    if (time >= this.frameBudget) {
                         // We're out of time, bail and enqueue another pass
                         this.enqueueRender();
                         return;
                     }
                 }
             }
-
             if (!!this.provider.dataRangeChanged) {
                 var newDataRange = new CellRange(firstBlock, lastBlock);
                 if (!newDataRange.isEmpty() && !newDataRange.equals(this.dataCellRange)) {
@@ -879,7 +765,6 @@ var TronGrid;
                     this.provider.dataRangeChanged(newDataRange);
                 }
             }
-
             if (!!this.provider.visibleRangeChanged) {
                 var newVisibleRange = this.getVisibleCellRange(this.scrollBounds);
                 if (!newVisibleRange.equals(this.visibleCellRange)) {
@@ -887,7 +772,6 @@ var TronGrid;
                     this.provider.visibleRangeChanged(newVisibleRange);
                 }
             }
-
             // HACK: Invalid scroll size again, as we've rendered content
             if (this.scrollBounds.height === 0) {
                 this.scrollChanged();
@@ -901,24 +785,20 @@ var TronGrid;
             ////    this.blockContainer.style.height = visibleBlockHeight + 'px';
             ////}
         };
-
         TronGrid.prototype.renderBlock = function (block, bounds) {
             if (block.bounds.intersects(bounds)) {
                 block.show(this, this.blockContainer);
                 return true;
             }
-
             block.hide(this.blockContainer);
             return false;
         };
-
         TronGrid.prototype.getBlockIndex = function (row, column) {
             var br = Math.floor(row / this.provider.rowsPerBlock) || 0;
             var bc = Math.floor(column / this.provider.columnsPerBlock) || 0;
             var i = (br * this.blockWidths.length) + bc;
-
             //// DEBUG: ASSERTION
-            ////var b = this.blocks[i];
+            ////var b = this.blocks[i]; 
             ////if (b.cellRange.lastRow < row || b.cellRange.firstRow > row) {
             ////    throw "bad row";
             ////} else if (b.cellRange.lastColumn < column || b.cellRange.firstColumn > column) {
@@ -926,12 +806,10 @@ var TronGrid;
             ////}
             return i;
         };
-
         TronGrid.prototype.clearMeasurements = function () {
             for (var i = 0; i < this.blocks.length; i++) {
                 this.blocks[i].hide(this.blockContainer);
             }
-
             this.blocks = [];
             this.blockHeights = [];
             this.blockLefts = [];
@@ -942,9 +820,8 @@ var TronGrid;
             this.totalHeight = 0;
             this.totalWidth = 0;
         };
-
         /** Invalidates the rendered data, either wholesale or selectively by row, column or both,
-        If cell sizes are affected by data then sizeChanged should be set to true */
+            If cell sizes are affected by data then sizeChanged should be set to true */
         TronGrid.prototype.dataChanged = function (change) {
             var hasRow = !!change && (typeof change.firstRow !== 'undefined' || typeof change.lastRow !== 'undefined');
             var hasColumn = !!change && (typeof change.firstColumn !== 'undefined' || typeof change.lastColumn !== 'undefined');
@@ -955,13 +832,11 @@ var TronGrid;
                 this.enqueueMeasureAndRender();
                 return;
             }
-
             // Invalidate all rows for the column range
             change.firstRow = typeof change.firstRow !== 'undefined' ? change.firstRow : 0;
             change.lastRow = typeof change.lastRow !== 'undefined' ? change.lastRow : this.rowHeights.length;
             change.firstColumn = typeof change.firstColumn !== 'undefined' ? change.firstColumn : 0;
             change.lastColumn = typeof change.lastColumn !== 'undefined' ? change.lastColumn : this.columnWidths.length;
-
             // Row set, but column undefined invalidates an entire row,
             // Column set, but row undefined invalidates an entire column.
             // Both row and column set invalidates a cell.
@@ -978,28 +853,26 @@ var TronGrid;
                         }
                     }
                 }
-            } else {
+            }
+            else {
                 for (var i = 0; i < this.blocks.length; i++) {
                     this.blocks[i].invalidate(sizeChanged);
                 }
             }
-
             if (sizeChanged || this.blockWidths.length === 0) {
                 this.enqueueMeasureAndRender();
-            } else {
+            }
+            else {
                 this.enqueueRender();
             }
         };
-
         TronGrid.prototype.sumRange = function (values, startIndex, lastIndex) {
             var v = 0;
             for (var i = startIndex; i < Math.min(lastIndex, values.length); i++) {
                 v += values[i];
             }
-
             return v;
         };
-
         TronGrid.prototype.scrollTo = function (scroll) {
             var alignLeftEdge = false;
             var alignTopEdge = false;
@@ -1013,26 +886,21 @@ var TronGrid;
                 leftEdge = this.sumRange(this.columnWidths, 0, scroll.firstColumn);
                 alignLeftEdge = leftEdge < this.scroller.scrollLeft || !scroll.lastColumn;
             }
-
             if (typeof scroll.firstRow !== 'undefined') {
                 topEdge = this.sumRange(this.rowHeights, 0, scroll.firstRow);
                 alignTopEdge = topEdge < this.scroller.scrollTop || !scroll.lastRow;
             }
-
             if (typeof scroll.lastColumn !== 'undefined') {
                 rightEdge = this.sumRange(this.columnWidths, 0, scroll.lastColumn + 1);
                 alignRightEdge = rightEdge > this.scroller.scrollLeft + this.scrollerSize.width;
             }
-
             if (typeof scroll.lastRow !== 'undefined') {
                 bottomEdge = this.sumRange(this.rowHeights, 0, scroll.lastRow + 1);
                 alignBottomEdge = bottomEdge > this.scroller.scrollTop + this.scrollerSize.height;
             }
-
             if (!alignLeftEdge && !alignRightEdge && !alignTopEdge && !alignBottomEdge) {
                 return;
             }
-
             ////console.log('scrollTo', { alignLeftEdge: alignLeftEdge, alignRightEdge: alignRightEdge });
             var scrollX = alignLeftEdge ? leftEdge : (alignRightEdge ? Math.max(0, rightEdge - this.scrollerSize.width) : this.scroller.scrollLeft);
             var scrollY = alignTopEdge ? topEdge : (alignBottomEdge ? Math.max(0, bottomEdge - this.scrollerSize.height) : this.scroller.scrollTop);
@@ -1041,52 +909,42 @@ var TronGrid;
                     scrollLeft: scrollX,
                     scrollTop: scrollY
                 }, scroll.duration);
-            } else {
+            }
+            else {
                 this.scroller.scrollLeft = scrollX;
                 this.scroller.scrollTop = scrollY;
             }
         };
-
         TronGrid.prototype.subscribeData = function () {
             var _this = this;
             this.disposeData();
-            this.dataSubscription = this.provider.dataChanged.subscribe(function (d) {
-                return _this.dataChanged(d);
-            });
+            this.dataSubscription = this.provider.dataChanged.subscribe(function (d) { return _this.dataChanged(d); });
             if (!!this.provider.scrollIntoView) {
-                this.scrollSubscription = this.provider.scrollIntoView.subscribe(function (request) {
-                    return _this.scrollTo(request);
-                });
+                this.scrollSubscription = this.provider.scrollIntoView.subscribe(function (request) { return _this.scrollTo(request); });
             }
         };
-
         TronGrid.prototype.disposeData = function () {
             if (!!this.dataSubscription) {
                 this.dataSubscription.dispose();
                 this.dataSubscription = null;
             }
-
             if (!!this.scrollSubscription) {
                 this.scrollSubscription.dispose();
                 this.scrollSubscription = null;
             }
         };
-
         TronGrid.prototype.registerEventHandlers = function () {
             ////$(window).resize(() => this.sizeChanged());
             window.addEventListener('resize', this.sizeChangedListener);
-
             ////ko.utils.domNodeDisposal.addDisposeCallback(this.scroller, () => $(this.scroller).off('resize'));
             ////ko.utils.registerEventHandler(this.scroller, 'resize', this.sizeChanged.bind(this));
             ko.utils.registerEventHandler(this.scroller, 'scroll', this.scrollChanged.bind(this));
         };
-
         TronGrid.prototype.sizeChanged = function () {
             this.scrollerSize = {
                 width: this.scroller.clientWidth,
                 height: this.scroller.clientHeight
             };
-
             if (!!this.options.behaviors) {
                 for (var b = 0; b < this.options.behaviors.length; b++) {
                     if (this.options.behaviors[b].sizeChanged) {
@@ -1094,7 +952,6 @@ var TronGrid;
                     }
                 }
             }
-
             this.scrollChanged();
         };
         return TronGrid;

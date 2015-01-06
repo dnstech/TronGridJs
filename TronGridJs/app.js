@@ -1,10 +1,10 @@
-﻿/// <reference path="trongrid.ts" />
+/// <reference path="trongrid.ts" />
 /// <reference path="ko-trongrid.ts" />
 /// <reference path="trongrid-scrollsync.ts" />
 var MainViewModel = (function () {
     function MainViewModel() {
         this.log = ko.observableArray([]);
-        this.lastUpdated = ko.observable('');
+        this.lastUpdated = ko.observable("");
         this.syncIsActive = ko.observable(false);
         this.textOptions = {
             dataProvider: new SampleDataProvider(),
@@ -26,14 +26,12 @@ var MainViewModel = (function () {
             this.timer = null;
             return;
         }
-
         this.timer = setInterval(function () {
             var d = new Date();
             _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
             _this.textOptions.dataProvider.dataChanged({});
         }, 500);
     };
-
     MainViewModel.prototype.scrollTo = function () {
         this.textOptions.dataProvider.scrollIntoView({
             firstColumn: 10,
@@ -42,17 +40,15 @@ var MainViewModel = (function () {
             lastRow: 20
         });
     };
-
     MainViewModel.prototype.scrollToAnimated = function () {
         this.textOptions.dataProvider.scrollIntoView({
             firstColumn: 40,
             firstRow: 40,
             lastColumn: 60,
             lastRow: 60,
-            duration: 2000
+            duration: 2000 // 2 seconds
         });
     };
-
     MainViewModel.prototype.changeCanvasData = function () {
         var _this = this;
         if (!!this.timer) {
@@ -60,7 +56,6 @@ var MainViewModel = (function () {
             this.timer = null;
             return;
         }
-
         this.timer = setInterval(function () {
             var d = new Date();
             _this.lastUpdated(d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
@@ -69,7 +64,6 @@ var MainViewModel = (function () {
     };
     return MainViewModel;
 })();
-
 var SampleChartDataProvider = (function () {
     function SampleChartDataProvider() {
         this.rowCount = 100;
@@ -78,26 +72,22 @@ var SampleChartDataProvider = (function () {
         this.columnsPerBlock = 5;
         this.dataChanged = ko.observable();
     }
-    SampleChartDataProvider.prototype.rowHeight = function (r) {
+    SampleChartDataProvider.prototype.rowHeight = function (row) {
         return 200;
     };
-
-    SampleChartDataProvider.prototype.columnWidth = function (c) {
+    SampleChartDataProvider.prototype.columnWidth = function (column) {
         return 100;
     };
-
-    SampleChartDataProvider.prototype.cellData = function (r, c) {
+    SampleChartDataProvider.prototype.cellData = function (row, column) {
         var d = new Date();
         return d.getMilliseconds();
     };
     return SampleChartDataProvider;
 })();
-
 var SampleCanvasPresenter = (function () {
     function SampleCanvasPresenter() {
         this.pixelRatio = (function () {
             var ctx = document.createElement("canvas").getContext("2d"), dpr = window.devicePixelRatio || 1, bsr = ctx.webkitBackingStorePixelRatio || ctx.mozBackingStorePixelRatio || ctx.msBackingStorePixelRatio || ctx.oBackingStorePixelRatio || ctx.backingStorePixelRatio || 1;
-
             return dpr / bsr;
         })();
     }
@@ -105,7 +95,6 @@ var SampleCanvasPresenter = (function () {
         if (!ratio) {
             ratio = this.pixelRatio;
         }
-
         var can = document.createElement("canvas");
         can.width = w * ratio;
         can.height = h * ratio;
@@ -114,11 +103,9 @@ var SampleCanvasPresenter = (function () {
         can.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
         return can;
     };
-
     SampleCanvasPresenter.prototype.createCell = function (row, column, size) {
         return this.createHiDPICanvas(size.width, size.height);
     };
-
     SampleCanvasPresenter.prototype.renderCell = function (cell, data, row, column, size) {
         var context = cell.getContext("2d");
         var h = (data / 5);
@@ -138,30 +125,26 @@ var SampleCanvasPresenter = (function () {
     };
     return SampleCanvasPresenter;
 })();
-
 var SampleDataProvider = (function () {
     function SampleDataProvider() {
         this.rowCount = 1000;
         this.columnCount = 100;
-        this.rowsPerBlock = 10;
+        this.rowsPerBlock = 5;
         this.columnsPerBlock = 20;
         this.scrollIntoView = ko.observable();
         this.dataChanged = ko.observable(null);
     }
     SampleDataProvider.prototype.cellData = function (r, c) {
         var d = new Date();
-        return '[' + r + ',' + c + '] ' + d.getMinutes() + ':' + d.getSeconds();
+        return r + ', ' + c;
     };
-
     SampleDataProvider.prototype.rowHeight = function (r) {
-        return new Date().getSeconds() % 2 === 0 ? 50 : 25;
+        return 30;
     };
-
     SampleDataProvider.prototype.columnWidth = function (c) {
-        return 100;
+        return 130;
     };
     return SampleDataProvider;
 })();
-
 ko.applyBindings(new MainViewModel());
 //# sourceMappingURL=app.js.map

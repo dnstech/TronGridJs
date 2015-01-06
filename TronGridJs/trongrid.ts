@@ -538,6 +538,9 @@ module TronGrid {
 
         renderQueued = 0;
         measureQueued = false;
+
+        /** Number of milliseconds to give to rendering blocks in each frame */
+        frameBudget = 8;
         options: IOptions = this.defaultOptions;
         dataSubscription: KnockoutSubscription;
         scrollSubscription: KnockoutSubscription;
@@ -996,7 +999,7 @@ module TronGrid {
                     this.blocks[i].hide(this.blockContainer);
 
                     time = performance.now() - start;
-                    if (time > 8) {
+                    if (time >= this.frameBudget) {
                         // We're out of time, bail and enqueue another pass
                         this.enqueueRender();
                         return;
