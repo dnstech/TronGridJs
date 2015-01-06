@@ -1100,6 +1100,22 @@ module TronGrid {
             change.firstColumn = typeof change.firstColumn !== 'undefined' ? change.firstColumn : 0;
             change.lastColumn = typeof change.lastColumn !== 'undefined' ? change.lastColumn : this.columnWidths.length;
 
+            // If the row range is the wrong way round, swap them around (we know what you meant).
+            if (change.firstRow > change.lastRow) {
+                var fr = change.firstRow;
+                change.firstRow = change.lastRow;
+                change.lastRow = fr;
+            }
+
+
+            // If the column range is the wrong way round, swap them around (we know what you meant).
+            if (change.firstColumn > change.lastColumn) {
+                var fc = change.firstColumn;
+                change.firstColumn = change.lastColumn;
+                change.lastColumn = fc;
+            }
+
+
             // Row set, but column undefined invalidates an entire row,
             // Column set, but row undefined invalidates an entire column.
             // Both row and column set invalidates a cell.
