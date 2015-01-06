@@ -89,9 +89,10 @@ In this example we will be using TypeScript and TronGrid's knockout binding (alt
     In the above example we are declaring a 10,000,000 cell table (1,000 columns x 10,000 rows)
 
     > Note: If you change these values or any measurements, you must call:
-        ```TypeScript
+        
+    ```TypeScript
         this.dataChanged({ sizeChanged: true });
-        ```
+    ```
     
     When TronGrid first loads it will interrogate the data provider as to the measurements for each column and each row, this will tell it how big the scrollable area needs to be.
 
