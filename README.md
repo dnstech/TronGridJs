@@ -102,11 +102,11 @@ In this example we will be using TypeScript and TronGrid's knockout binding (alt
              renderCell(cell:HTMLDivElement, data: any, row: number, column: number) {
                 cell.textContent = data;
                 if (row % 2) {
-                    cell.className = 'odd-row';
+                    cell.className += ' odd-row';
                 }
 
                 if (column % 2) {
-                    cell.className = 'odd-column';
+                    cell.className += ' odd-column';
                 }
              }
         }
