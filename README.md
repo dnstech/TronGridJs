@@ -6,8 +6,8 @@ A virtualized JavaScript grid layout system with support for non-uniform row hei
 ## When would I use this?
 
 You should use this when:
-* You have a *LOT* of data you want your users to scroll through in their browser
-* Your presentation can sliced up into some kind of cell based layout 
+* You have a *LOT* of data you want your users to scroll through in their browser.
+* Your presentation can be sliced up into some kind of cell based layout.
 * Performance matters to you. 
 
 TronGrid is built to keep your browser scrolling fluidly through your data at 60fps. 
@@ -86,7 +86,7 @@ In this example we will be using TypeScript and TronGrid's knockout binding (alt
         }
     ```
 
-    In the above example we are declaring a 100,000,000 cell table (1,000 columns x 10,000 rows)
+    In the above example we are declaring a 10,000,000 cell table (1,000 columns x 10,000 rows)
 
     > Note: If you change these values or any measurements, you must call:
         ```TypeScript
