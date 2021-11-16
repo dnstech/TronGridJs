@@ -6,6 +6,7 @@ A virtualized JavaScript grid layout system with support for non-uniform row hei
 
 ## When would I use this?
 
+This is the second change i made.
 You should use this when:
 * You have a *LOT* of data you want your users to scroll through in their browser.
 * Your presentation can be sliced up into some kind of cell based layout.
